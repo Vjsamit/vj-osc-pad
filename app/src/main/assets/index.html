@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#07070c">
+
+<title>VJ OSC Pad</title>
+<style>
+:root{--bg:#07070c;--panel:#11111a;--line:#24243a;--txt:#e9e9f4;--dim:#7d7d9a;--acc:#ff2e88;--acc2:#18e0ff;--ok:#2bff88;--warn:#ffb020}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;touch-action:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:600 13px/1.1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100%;padding:6px calc(6px + env(safe-area-inset-right)) 6px calc(6px + env(safe-area-inset-left));gap:6px}
+.bar{display:flex;gap:6px;align-items:stretch;height:46px;flex:none}
+.btn{flex:1;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--panel);border:1px solid var(--line);color:var(--txt);text-align:center;padding:2px 4px;overflow:hidden;font-size:12px;letter-spacing:.3px}
+.btn.on,.btn:active{filter:brightness(1.6)}
+.tab{flex:none;padding:0 14px}
+.tab.sel{background:var(--acc);border-color:var(--acc);color:#fff}
+#dot{width:12px;height:12px;border-radius:50%;background:#f33;align-self:center;flex:none;box-shadow:0 0 8px #f33}
+#dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+.tap{background:#1a1030;border-color:#5a2aa8;flex-direction:column;gap:3px}
+.blk{background:#300a10;border-color:#a8203a}
+.view{flex:1;min-height:0;display:none;gap:6px}
+.view.sel{display:flex}
+/* clips */
+#clips{flex-direction:column}
+.row{flex:1;display:flex;gap:5px;min-height:0}
+.lbl{flex:none;width:54px;display:flex;flex-direction:column;gap:4px}
+.lbl .btn{font-size:11px}
+.clip{flex:1;border-radius:8px;background:#151522;border:1px solid var(--line);font-size:10px;color:var(--dim);display:flex;align-items:flex-end;justify-content:center;padding:3px;overflow:hidden;word-break:break-all;position:relative}
+.clip.has{color:#cfd0ea;background:#1b1b2e}
+.clip.live{background:linear-gradient(180deg,var(--c),#0000 140%);border-color:var(--c);color:#fff;box-shadow:0 0 12px var(--c) inset}
+.clip.hit{filter:brightness(2)}
+.colbtn{flex:1;border-radius:8px;background:#1a1426;border:1px solid #3c2a5c;display:flex;align-items:center;justify-content:center;font-size:11px}
+.hf{flex:none;width:120px}
+/* faders */
+.fader{position:relative;border-radius:10px;background:#0d0d16;border:1px solid var(--line);overflow:hidden}
+.fader .fill{position:absolute;left:0;bottom:0;width:100%;background:linear-gradient(0deg,var(--c,var(--acc2)),#0000);opacity:.85}
+.fader.h .fill{top:0;height:100%;width:0;background:linear-gradient(90deg,#0000,var(--c,var(--acc2)))}
+.fader .cap{position:absolute;left:0;right:0;top:4px;text-align:center;font-size:10px;color:var(--dim);pointer-events:none;z-index:2}
+.fader.h .cap{top:50%;transform:translateY(-50%)}
+.fader .val{position:absolute;left:0;right:0;bottom:4px;text-align:center;font-size:11px;pointer-events:none;z-index:2}
+.fader.h .val{bottom:auto;top:50%;right:6px;left:auto;transform:translateY(-50%)}
+/* pads */
+#pads{}
+.grid{flex:1;display:grid;gap:6px;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr)}
+.pad{border-radius:12px;background:#12121c;border:2px solid var(--c);display:flex;align-items:flex-end;justify-content:flex-start;padding:6px;font-size:11px;color:var(--c);transition:background .06s}
+.pad.on{background:var(--c);color:#000;box-shadow:0 0 22px var(--c)}
+.fbank{flex:none;width:44%;display:flex;gap:5px}
+.fbank .fader{flex:1}
+/* xy */
+.xy{flex:1;position:relative;border-radius:12px;background:radial-gradient(circle at 50% 50%,#16162a,#0a0a12);border:1px solid var(--line);overflow:hidden}
+.xy .cross{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;border:2px solid var(--c);box-shadow:0 0 18px var(--c);pointer-events:none}
+.xy .hl,.xy .vl{position:absolute;background:var(--c);opacity:.25;pointer-events:none}
+.xy .hl{left:0;right:0;height:1px}.xy .vl{top:0;bottom:0;width:1px}
+.xy .cap{position:absolute;left:8px;top:6px;font-size:11px;color:var(--dim)}
+.tcol{flex:none;width:90px;display:flex;flex-direction:column;gap:6px}
+.tcol .btn{flex:1}
+.tog.on{background:var(--c);color:#000;border-color:var(--c)}
+/* settings */
+#setup{flex-direction:column;overflow:auto;touch-action:pan-y;padding:8px 4px}
+#setup *{touch-action:pan-y}
+#setup label{display:flex;gap:10px;align-items:center;margin:6px 0;font-weight:500}
+#setup input{background:#0d0d16;border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px;width:90px;font:inherit;user-select:text;-webkit-user-select:text}
+#setup p{color:var(--dim);font-weight:400;line-height:1.5;margin:6px 0;max-width:720px}
+#setup code{color:var(--acc2)}
+#rot{display:none;position:fixed;inset:0;background:var(--bg);z-index:9;align-items:center;justify-content:center;font-size:18px;text-align:center;padding:30px}
+
+</style></head>
+<body>
+<div id="rot">Phone ko landscape (aadha ghuma ke) pakdo ↻</div>
+<div id="app">
+  <div class="bar">
+    <div id="dot"></div>
+    <div class="btn tab sel" data-v="clips">CLIPS</div>
+    <div class="btn tab" data-v="pads">PADS</div>
+    <div class="btn tab" data-v="xyv">XY / FX</div>
+    <div class="btn tab" data-v="setup">⚙</div>
+    <div class="btn tap" id="tap">TAP<br><span id="bpm" style="font-size:10px;color:var(--dim)">—</span></div>
+    <div class="btn" id="resync">RESYNC</div>
+    <div class="btn" id="prevcol">◀ COL</div>
+    <div class="btn" id="nextcol">COL ▶</div>
+    <div class="fader h" id="master" style="flex:2.2;--c:#ff2e88"></div>
+    <div class="btn blk" id="blackout">BLACKOUT</div>
+    <div class="btn" id="fs">⟳</div>
+  </div>
+  <div class="view sel" id="clips"></div>
+  <div class="view" id="pads"><div class="grid" id="padgrid"></div><div class="fbank" id="fbank"></div></div>
+  <div class="view" id="xyv"></div>
+  <div class="view" id="setup">
+    <label>Resolume PC ka IP <input id="sIp" style="width:160px" placeholder="192.168.1.10" inputmode="decimal"></label>
+    <label>OSC Input port <input id="sPort" type="number"></label>
+    <label>Feedback port (phone) <input id="sFbp" type="number"></label>
+    <label>Layers <input id="sLayers" type="number" min="1" max="8"></label>
+    <label>Columns <input id="sCols" type="number" min="1" max="16"></label>
+    <label><input id="sFb" type="checkbox" style="width:auto"> Clip trigger par turant light dikhao (Resolume feedback na ho to)</label>
+    <p><b>Resolume setup:</b> Preferences → OSC → <b>OSC Input</b> ON, port <code>7000</code>. PC ka IP: Windows me <code>cmd</code> kholo, <code>ipconfig</code> likho, IPv4 Address dekho. Clip naam/light ke liye <b>OSC Output</b> ON, IP = neeche likha phone ka IP, port <code>7001</code>.</p>
+    <p><b>MIDI jaisa map karna (PADS / XY / FX tab):</b> Resolume me upar menu <b>Shortcuts → Edit OSC</b> (Ctrl+Shift+O) dabao, Resolume me koi bhi control click karo (jaise Strobe effect ka Opacity), phir phone par pad/fader chalao. Map ho gaya. Wapas Edit OSC band karo. Bilkul MIDI learn jaisa.</p>
+    <p>PADS bhejte hain <code>/vjpad/pad/1..16</code> (dabane par 1, chhodne par 0), faders <code>/vjpad/fader/1..8</code> (0–1), XY <code>/vjpad/xy/1/x</code> aur <code>/y</code>, toggles <code>/vjpad/toggle/1..6</code>, FX faders <code>/vjpad/fx/1..6</code>.</p>
+    <p id="tgt"></p>
+  </div>
+</div>
+<script>
+const $=s=>document.querySelector(s);
+const COLORS=['#ff2e88','#18e0ff','#ffb020','#2bff88','#a96bff','#ff5a3c','#3c8cff','#f4ff3c'];
+let S={layers:4,cols:8,local:true};
+try{Object.assign(S,JSON.parse(localStorage.getItem('vjpad')||'{}'))}catch(e){}
+const save=()=>{try{localStorage.setItem('vjpad',JSON.stringify(S))}catch(e){}};
+
+/* ---------- connection + batching ---------- */
+let q=[],qmap=new Map();
+const BR=window.Android;
+function applyNet(){ if(BR){ BR.config(S.ip||'192.168.1.10',+S.port||7000,+S.fbport||7001);
+  $('#dot').classList.toggle('ok',!!S.ip); $('#tgt').textContent='Resolume: '+(S.ip||'(IP daalo)')+':'+(S.port||7000)+'   ·   Is phone ka IP: '+BR.myIp()+'  (Resolume OSC Output me ye IP aur port '+(S.fbport||7001)+' daalo)'; } }
+window.__fb=(a,v)=>fb(a,v);
+function osc(addr,...args){ q.push([addr,args]); flush(); }
+function oscCont(addr,...args){ qmap.set(addr,args); if(!raf) raf=requestAnimationFrame(()=>{raf=0;for(const [a,v] of qmap)q.push([a,v]);qmap.clear();flush()}); }
+let raf=0;
+function flush(){ if(q.length){ if(BR) BR.send(JSON.stringify(q)); q=[]; } }
+function haptic(){ if(BR) BR.vibrate(); }
+
+/* ---------- helpers ---------- */
+function press(el,down,up){
+  el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);el.classList.add('on');haptic();down&&down(e)});
+  const end=e=>{if(!el.classList.contains('on'))return;el.classList.remove('on');up&&up(e)};
+  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+}
+function fader(el,addr,{label='',horiz=false,init=0,color,fmt=v=>Math.round(v*100)}={}){
+  if(horiz)el.classList.add('h'); if(color)el.style.setProperty('--c',color);
+  el.innerHTML=`<div class="fill"></div><div class="cap">${label}</div><div class="val"></div>`;
+  const fill=el.querySelector('.fill'),val=el.querySelector('.val');
+  let v=init;
+  const draw=()=>{ if(horiz)fill.style.width=(v*100)+'%'; else fill.style.height=(v*100)+'%'; val.textContent=fmt(v); };
+  const set=(e)=>{const r=el.getBoundingClientRect();
+    v=horiz?(e.clientX-r.left)/r.width:1-(e.clientY-r.top)/r.height; v=Math.min(1,Math.max(0,v)); draw(); oscCont(addr,{f:v});};
+  el.addEventListener('pointerdown',e=>{e.preventDefault();el.setPointerCapture(e.pointerId);set(e)});
+  el.addEventListener('pointermove',e=>{if(el.hasPointerCapture(e.pointerId))set(e)});
+  el.addEventListener('dblclick',()=>{v=init;draw();osc(addr,{f:v})});
+  draw();
+  el._set=x=>{v=x;draw()};
+  return el;
+}
+
+/* ---------- top bar ---------- */
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('pointerdown',()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('sel',x===t));
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('sel',v.id===t.dataset.v));
+  if(t.dataset.v==='setup'){$('#sIp').value=S.ip||'';$('#sPort').value=S.port||7000;$('#sFbp').value=S.fbport||7001;$('#sLayers').value=S.layers;$('#sCols').value=S.cols;$('#sFb').checked=S.local}
+}));
+let taps=[];
+press($('#tap'),()=>{osc('/composition/tempocontroller/tempotap',1);
+  const n=performance.now();taps=taps.filter(t=>n-t<2500);taps.push(n);
+  if(taps.length>1){const b=60000/((taps.at(-1)-taps[0])/(taps.length-1));$('#bpm').textContent=b.toFixed(1)}},
+  ()=>osc('/composition/tempocontroller/tempotap',0));
+press($('#resync'),()=>osc('/composition/tempocontroller/resync',1),()=>osc('/composition/tempocontroller/resync',0));
+press($('#prevcol'),()=>osc('/composition/connectprevcolumn',1));
+press($('#nextcol'),()=>osc('/composition/connectnextcolumn',1));
+const master=fader($('#master'),'/composition/master',{label:'MASTER',horiz:true,init:1,color:'#ff2e88'});
+let bo=false;
+press($('#blackout'),()=>{bo=!bo;$('#blackout').style.background=bo?'#ff1a3c':'';
+  osc('/composition/master',{f:bo?0:1});master._set(bo?0:1)});
+press($('#fs'),()=>{location.reload()});
+
+/* ---------- clips ---------- */
+const clipEls={},layerFaders={};
+function buildClips(){
+  const v=$('#clips');v.innerHTML='';
+  for(let L=S.layers;L>=1;L--){
+    const row=document.createElement('div');row.className='row';
+    const lbl=document.createElement('div');lbl.className='lbl';
+    const c=COLORS[(L-1)%COLORS.length];
+    lbl.innerHTML=`<div class="btn" style="color:${c}">L${L}</div><div class="btn">✕ CLR</div>`;
+    press(lbl.children[0],()=>osc(`/composition/layers/${L}/select`,1));
+    press(lbl.children[1],()=>{osc(`/composition/layers/${L}/clear`,1);
+      if(S.local)for(let C=1;C<=S.cols;C++)clipEls[L+'/'+C]?.classList.remove('live')},()=>osc(`/composition/layers/${L}/clear`,0));
+    row.appendChild(lbl);
+    for(let C=1;C<=S.cols;C++){
+      const el=document.createElement('div');el.className='clip';el.style.setProperty('--c',c);el.textContent=C;
+      clipEls[L+'/'+C]=el;
+      press(el,()=>{osc(`/composition/layers/${L}/clips/${C}/connect`,1);
+        if(S.local&&!anyFb){for(let k=1;k<=S.cols;k++)clipEls[L+'/'+k].classList.toggle('live',k===C)}},
+        ()=>osc(`/composition/layers/${L}/clips/${C}/connect`,0));
+      row.appendChild(el);
+    }
+    const f=document.createElement('div');f.className='fader hf';row.appendChild(f);
+    layerFaders[L]=fader(f,`/composition/layers/${L}/video/opacity`,{label:'L'+L+' OPACITY',horiz:true,init:1,color:c});
+    v.appendChild(row);
+  }
+  const cr=document.createElement('div');cr.className='row';cr.style.flex='0.7';
+  cr.innerHTML='<div class="lbl"><div class="btn" style="font-size:10px">COLUMN</div></div>';
+  for(let C=1;C<=S.cols;C++){const b=document.createElement('div');b.className='colbtn';b.textContent='▶ '+C;
+    press(b,()=>{osc(`/composition/columns/${C}/connect`,1);
+      if(S.local&&!anyFb)for(let L=1;L<=S.layers;L++)for(let k=1;k<=S.cols;k++)clipEls[L+'/'+k].classList.toggle('live',k===C)},
+      ()=>osc(`/composition/columns/${C}/connect`,0));cr.appendChild(b)}
+  const sp=document.createElement('div');sp.className='hf';cr.appendChild(sp);
+  v.appendChild(cr);
+}
+let anyFb=false;
+function fb(a,v){
+  let m=a.match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/(connected|name)$/);
+  if(m){const el=clipEls[m[1]+'/'+m[2]];if(!el)return;anyFb=true;
+    if(m[3]==='name'){const n=String(v[0]||'');el.textContent=n||m[2];el.classList.toggle('has',!!n)}
+    else{const s=v[0];el.classList.toggle('has',s>=1);el.classList.toggle('live',s>=3)}
+    return}
+  m=a.match(/^\/composition\/layers\/(\d+)\/video\/opacity$/);
+  if(m&&layerFaders[m[1]]){layerFaders[m[1]]._set(+v[0]);return}
+  if(a==='/composition/master'){master._set(+v[0]);return}
+}
+buildClips();
+
+/* ---------- pads ---------- */
+const PADN=['STROBE','NEG','BLUR','RGB','ZOOM','SHAKE','KALEIDO','MIRROR','FLASH W','FLASH R','GLITCH','PIXEL','HUE','INVERT','TRAILS','BLACK'];
+(function(){
+  const g=$('#padgrid');
+  for(let i=1;i<=16;i++){const p=document.createElement('div');p.className='pad';p.style.setProperty('--c',COLORS[Math.floor((i-1)/4)%COLORS.length]);
+    p.textContent=i+' · '+PADN[i-1];
+    press(p,()=>osc('/vjpad/pad/'+i,1),()=>osc('/vjpad/pad/'+i,0));g.appendChild(p)}
+  const fbk=$('#fbank');
+  for(let i=1;i<=8;i++){const f=document.createElement('div');f.className='fader';fbk.appendChild(f);
+    fader(f,'/vjpad/fader/'+i,{label:'F'+i,init:0,color:COLORS[(i-1)%COLORS.length]})}
+})();
+
+/* ---------- XY / FX ---------- */
+(function(){
+  const v=$('#xyv');
+  const tc=document.createElement('div');tc.className='tcol';
+  for(let i=1;i<=6;i++){const t=document.createElement('div');t.className='btn tog';t.style.setProperty('--c',COLORS[i%8]);t.textContent='TOGGLE '+i;
+    let on=false;t.addEventListener('pointerdown',e=>{e.preventDefault();on=!on;t.classList.toggle('on',on);haptic();osc('/vjpad/toggle/'+i,on?1:0)});tc.appendChild(t)}
+  v.appendChild(tc);
+  for(let n=1;n<=2;n++){
+    const xy=document.createElement('div');xy.className='xy';xy.style.setProperty('--c',n===1?'#18e0ff':'#ff2e88');
+    xy.innerHTML=`<div class="hl"></div><div class="vl"></div><div class="cross"></div><div class="cap">XY ${n} · /vjpad/xy/${n}</div>`;
+    const cr=xy.querySelector('.cross'),hl=xy.querySelector('.hl'),vl=xy.querySelector('.vl');
+    let x=.5,y=.5,spring=n===2;
+    const draw=()=>{cr.style.left=(x*100)+'%';cr.style.top=((1-y)*100)+'%';hl.style.top=((1-y)*100)+'%';vl.style.left=(x*100)+'%'};
+    const set=e=>{const r=xy.getBoundingClientRect();x=Math.min(1,Math.max(0,(e.clientX-r.left)/r.width));y=Math.min(1,Math.max(0,1-(e.clientY-r.top)/r.height));draw();
+      oscCont(`/vjpad/xy/${n}/x`,{f:x});oscCont(`/vjpad/xy/${n}/y`,{f:y})};
+    xy.addEventListener('pointerdown',e=>{e.preventDefault();xy.setPointerCapture(e.pointerId);set(e)});
+    xy.addEventListener('pointermove',e=>{if(xy.hasPointerCapture(e.pointerId))set(e)});
+    const up=()=>{if(spring){x=.5;y=.5;draw();osc(`/vjpad/xy/${n}/x`,{f:x});osc(`/vjpad/xy/${n}/y`,{f:y})}};
+    xy.addEventListener('pointerup',up);xy.addEventListener('pointercancel',up);
+    draw();v.appendChild(xy);
+  }
+  const fx=document.createElement('div');fx.className='fbank';fx.style.width='26%';
+  for(let i=1;i<=6;i++){const f=document.createElement('div');f.className='fader';fx.appendChild(f);fader(f,'/vjpad/fx/'+i,{label:'FX'+i,color:COLORS[(i+3)%8]})}
+  v.appendChild(fx);
+})();
+
+/* ---------- setup ---------- */
+$('#sLayers').addEventListener('change',e=>{S.layers=Math.max(1,Math.min(8,+e.target.value||4));save();buildClips()});
+$('#sCols').addEventListener('change',e=>{S.cols=Math.max(1,Math.min(16,+e.target.value||8));save();buildClips()});
+$('#sFb').addEventListener('change',e=>{S.local=e.target.checked;save()});
+$('#sIp').addEventListener('change',e=>{S.ip=e.target.value.trim();save();applyNet()});
+$('#sPort').addEventListener('change',e=>{S.port=+e.target.value||7000;save();applyNet()});
+$('#sFbp').addEventListener('change',e=>{S.fbport=+e.target.value||7001;save();applyNet()});
+applyNet(); if(!S.ip) document.querySelector('.tab[data-v=setup]').dispatchEvent(new PointerEvent('pointerdown'));
+document.addEventListener('contextmenu',e=>e.preventDefault());
+
+</script>
+</body></html>
