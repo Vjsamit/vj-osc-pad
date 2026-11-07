@@ -44,6 +44,8 @@ public class MainActivity extends Activity {
     private DatagramSocket fbSock;
     private Vibrator vib;
     private volatile Set<String> watched = new HashSet<String>();
+    private volatile boolean learning = false;
+    private static final java.util.regex.Pattern LEARN = java.util.regex.Pattern.compile("^/composition/layers/\\d+/clips/\\d+/(connected|select|selected)$");
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
     @Override
@@ -56,6 +58,8 @@ public class MainActivity extends Activity {
         ws.setJavaScriptEnabled(true);
         ws.setDomStorageEnabled(true);
         ws.setAllowFileAccess(true);
+        ws.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+        ws.setCacheMode(WebSettings.LOAD_NO_CACHE);
         web.setWebViewClient(new WebViewClient());
         web.setWebChromeClient(new WebChromeClient());
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
@@ -126,7 +130,7 @@ public class MainActivity extends Activity {
             int end = off + n;
             int j = strEnd(b, off, end);
             String addr = new String(b, off, j - off, UTF8);
-            if (!watched.contains(addr)) return;
+            if (!watched.contains(addr) && !(learning && LEARN.matcher(addr).matches())) return;
             int i = (j + 4 - off) / 4 * 4 + off;
             int k = strEnd(b, i, end);
             String tags = new String(b, i, k - i, UTF8);
@@ -213,6 +217,9 @@ public class MainActivity extends Activity {
             } catch (Exception ignored) { }
             return "?";
         }
+
+        @JavascriptInterface
+        public void learn(boolean on) { learning = on; }
 
         @JavascriptInterface
         public void watch(String json) {

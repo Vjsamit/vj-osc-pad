@@ -32,6 +32,13 @@ body.editing #cv{background-image:linear-gradient(#ffffff0d 1px,transparent 1px)
 .pad .in.on .lab{color:#000}
 .pad .in.lit{background:linear-gradient(180deg,var(--c),#0000 150%)}
 .pad .in.lit .lab{color:#fff}
+.th{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.75;pointer-events:none;z-index:1}
+.pad .in.hasth{background:#000}
+.pad .in.hasth::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#000d,#0000 55%);z-index:2;pointer-events:none}
+.pad .in.hasth .lab{color:#fff;text-shadow:0 1px 3px #000}
+.pad .in.hasth.lit{box-shadow:0 0 18px var(--c),inset 0 0 0 3px var(--c)}
+.pad .in.hasth.lit .th{opacity:1}
+.pad .in.hasth.on .th{opacity:.35}
 /* fader */
 .fad .in{background:#0c0c15;border:1px solid var(--line)}
 .fad .fill{position:absolute;left:0;bottom:0;width:100%;background:linear-gradient(0deg,var(--c),#0000 140%)}
@@ -126,8 +133,11 @@ p.n{color:var(--dim);font-weight:400;line-height:1.45;margin:6px 0}
   <div class="row"><span>Resolume PC IP</span><input id="sIp" placeholder="192.168.1.5" inputmode="decimal"></div>
   <div class="row"><span>OSC Input port</span><input id="sPort" type="number"></div>
   <div class="row"><span>Feedback port</span><input id="sFbp" type="number"></div>
+  <div class="row"><span>Webserver port</span><input id="sWeb" type="number"></div>
+  <div class="row"><span>Thumbnails</span><select id="sTh"><option value="1">Dikhao</option><option value="0">Mat dikhao</option></select></div>
   <p class="n" id="myip"></p>
-  <p class="n">Resolume → Preferences → OSC → <b>OSC Input</b> ON, port 7000. PC ka IP: cmd me <b>ipconfig</b> → IPv4 Address. Light/naam ke liye <b>OSC Output</b> ON, IP = upar likha phone ka IP, port 7001.</p>
+  <div class="grid2"><div class="b" id="qNames">↻ Naam + thumbnail refresh</div></div>
+  <p class="n">Resolume → Preferences → OSC → <b>OSC Input</b> ON, port 7000. PC ka IP: cmd me <b>ipconfig</b> → IPv4 Address. Light/naam ke liye <b>OSC Output</b> ON, IP = upar likha phone ka IP, port 7001. Thumbnail ke liye Preferences → <b>Webserver</b> ON, port 8080.</p>
   <h4>PAGES</h4>
   <div class="row"><span>Is page ka naam</span><input id="sPgName"></div>
   <div class="grid2"><div class="b" id="pgAdd">＋ Naya page</div><div class="b" id="pgDup">⧉ Page copy</div><div class="b" id="pgLeft">◀ Page left</div><div class="b" id="pgRight">Page right ▶</div><div class="b danger" id="pgDel">🗑 Page delete</div></div>
@@ -145,7 +155,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BR=window.Android||null;
 const COLS=['#ff2e88','#18e0ff','#ffb020','#2bff88','#a96bff','#ff5a3c','#3c8cff','#f4ff3c','#ffffff','#ff8ad8'];
 const GW=24,GH=12;
-let S={ip:'',port:7000,fbport:7001};
+let S={ip:'',port:7000,fbport:7001,web:8080,thumbs:true};let TS=Date.now();
 let L=null;           // layout {pages:[{name,ctls:[]}], cur:0}
 let editing=false, sel=null;
 const VAL={};         // runtime values  id -> value
@@ -240,7 +250,12 @@ function build(c){
   ELS[c.id]=el; return el;
 }
 /* pad + toggle */
+function thumbUrl(c){const m=(c.addr||'').match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/connect$/);
+  if(!m||!S.thumbs||!S.ip)return null;return `http://${S.ip}:${S.web||8080}/api/v1/composition/layers/${m[1]}/clips/${m[2]}/thumbnail?t=${TS}`}
 function padLogic(c,inn,lab){
+  const tu=thumbUrl(c);
+  if(tu&&VAL[c.id+'nt']!==tu){const im=document.createElement('img');im.className='th';im.src=tu;
+    im.onload=()=>{if(im.naturalWidth>2)inn.classList.add('hasth');else im.remove()};im.onerror=()=>{im.remove();VAL[c.id+'nt']=tu};inn.prepend(im)}
   if(VAL[c.id+'n'])lab.textContent=VAL[c.id+'n'];
   if(VAL[c.id+'lit'])inn.classList.add('lit');
   const send=v=>osc(c.addr,c.int?Math.round(v):{f:+v});
@@ -293,7 +308,16 @@ function xyLogic(c,inn){
 }
 
 /* ---------------- feedback from Resolume ---------------- */
+let learnC=null,learnT=0;
+function startLearn(c){learnC=c;closeAll();if(BR&&BR.learn)BR.learn(true);toast('🎯 Ab Resolume me clip chalao…');clearTimeout(learnT);learnT=setTimeout(()=>{if(learnC){learnC=null;if(BR&&BR.learn)BR.learn(false);toast('Learn band (kuch nahi mila). Resolume OSC Output ON hai?')}},20000);
+  const e=ELS[c.id];if(e)e.querySelector('.in').style.outline='3px dashed #ffb020'}
+function linkClip(c,l,k){c.addr=`/composition/layers/${l}/clips/${k}/connect`;c.fb=`/composition/layers/${l}/clips/${k}/connected`;c.fbMin=3;c.nameAddr=`/composition/layers/${l}/clips/${k}/name`;c.int=true;c.on=1;c.off=0;
+  if(c.type!=='pad')c.type='pad';delete VAL[c.id+'nt'];saveL();refresh(c);watchList();query([c.nameAddr,c.fb]);toast('Juda: Layer '+l+' · Clip '+k)}
+function query(list){list.forEach(a=>{if(a)q.push([a,['?']])});flush()}
+function queryAll(){const s=new Set();L.pages.forEach(p=>p.ctls.forEach(c=>{if(c.nameAddr)s.add(c.nameAddr);if(c.fb)s.add(c.fb)}));query([...s])}
 window.__fb=(a,v)=>{
+  if(learnC){const m=a.match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/(connected|select|selected)$/);
+    if(m&&(m[3]!=='connected'||(+v[0])>=3)){const c=learnC;learnC=null;clearTimeout(learnT);if(BR&&BR.learn)BR.learn(false);haptic();linkClip(c,+m[1],+m[2]);return}}
   for(const p of L.pages)for(const c of p.ctls){
     if(c.fb===a){VAL[c.id+'lit']=(+v[0])>=(c.fbMin??1);const e=ELS[c.id];if(e)e.querySelector('.in').classList.toggle('lit',VAL[c.id+'lit'])}
     if(c.nameAddr===a){VAL[c.id+'n']=String(v[0]||'')||c.name;const e=ELS[c.id];if(e)e.querySelector('.lab').textContent=VAL[c.id+'n']}
@@ -318,7 +342,7 @@ function editLogic(c,el,rz){
   el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
 }
 function setEdit(on){editing=on;document.body.classList.toggle('editing',on);$('#edit').classList.toggle('on',on);$('#edit').textContent=on?'✓ DONE':'✎ EDIT';
-  $('#addCtl').style.display=on?'flex':'none';if(!on){sel=null;closeAll();$$('.ctl').forEach(x=>x.classList.remove('selc'));watchList()}}
+  $('#addCtl').style.display=on?'flex':'none';if(!on){sel=null;closeAll();$$('.ctl').forEach(x=>x.classList.remove('selc'));watchList();queryAll()}}
 $('#edit').addEventListener('click',()=>setEdit(!editing));
 $('#cv').addEventListener('pointerdown',e=>{if(editing&&e.target.id==='cv'){sel=null;$$('.ctl').forEach(x=>x.classList.remove('selc'));closeAll()}});
 
@@ -328,7 +352,7 @@ function openSheet(id){closeAll();$(id).classList.add('open')}
 $('#pClose').addEventListener('click',()=>{closeAll();watchList()});$('#aClose').addEventListener('click',closeAll);
 $('#sClose').addEventListener('click',closeAll);
 $('#addCtl').addEventListener('click',()=>openSheet('#adds'));
-$('#gear').addEventListener('click',()=>{$('#sIp').value=S.ip;$('#sPort').value=S.port;$('#sFbp').value=S.fbport;$('#sPgName').value=page().name;applyNet();openSheet('#sets')});
+$('#gear').addEventListener('click',()=>{$('#sWeb').value=S.web||8080;$('#sTh').value=S.thumbs?'1':'0';$('#sIp').value=S.ip;$('#sPort').value=S.port;$('#sFbp').value=S.fbport;$('#sPgName').value=page().name;applyNet();openSheet('#sets')});
 
 function freeSpot(w,h){const occ=(x,y)=>page().ctls.some(c=>x<c.x+c.w&&x+w>c.x&&y<c.y+c.h&&y+h>c.y);
   for(let y=0;y+h<=GH;y++)for(let x=0;x+w<=GW;x++)if(!occ(x,y))return[x,y];return[0,0]}
@@ -361,7 +385,21 @@ function openProps(c){
     const t=document.createElement('select');t.innerHTML='<option value="pad">Momentary (dabao-chhodo)</option><option value="toggle">Toggle (on/off)</option>';t.value=c.type;
     t.addEventListener('change',()=>{c.type=t.value;saveL();refresh(c);openProps(c)});row('Type',t);
     txt('OSC address','addr','/pad/1');num('On value','on');num('Off value','off');chk('Integer bhejo','int');
-    h4('LIGHT / NAAM (optional)');txt('Light address','fb','/composition/.../connected');num('Light kab (≥)','fbMin');txt('Naam address','nameAddr','');
+    h4('RESOLUME CLIP SE JODO (naam + light)');
+    const cm=(c.addr||'').match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/connect$/);
+    const st=document.createElement('p');st.className='n';st.textContent=cm?('Juda hai: Layer '+cm[1]+' · Clip '+cm[2]):'Abhi kisi clip se nahi juda.';B.appendChild(st);
+    const lr=document.createElement('div');lr.className='grid2';
+    const lb=document.createElement('div');lb.className='b';lb.style.background='#2a1a00';lb.style.borderColor='#ffb020';lb.textContent='🎯 LEARN (Resolume me clip chalao)';
+    lb.addEventListener('click',()=>startLearn(c));lr.appendChild(lb);
+    const ub=document.createElement('div');ub.className='b';ub.textContent='✕ Clip se hatao';
+    ub.addEventListener('click',()=>{const n=nextNum('pad');c.addr='/pad/'+n;c.fb='';c.nameAddr='';delete VAL[c.id+'n'];delete VAL[c.id+'lit'];saveL();refresh(c);openProps(c)});lr.appendChild(ub);B.appendChild(lr);
+    const li=document.createElement('input');li.type='number';li.placeholder='Layer';li.value=cm?cm[1]:'';
+    const ci=document.createElement('input');ci.type='number';ci.placeholder='Clip / Column';ci.value=cm?cm[2]:'';
+    const wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:6px;flex:1';wrap.append(li,ci);
+    const go=document.createElement('div');go.className='b';go.textContent='Jodo';go.style.flex='none';wrap.appendChild(go);
+    go.addEventListener('click',()=>{if(+li.value>0&&+ci.value>0){linkClip(c,+li.value,+ci.value);openProps(c)}});
+    row('Ya number se',wrap);
+    h4('ADVANCED');txt('Light address','fb','/composition/.../connected');num('Light kab (≥)','fbMin');txt('Naam address','nameAddr','');
   }
   if(c.type==='fader'||c.type==='knob'){
     txt('OSC address','addr','/fader/1');num('Min','min');num('Max','max');num('Default','def');chk('Integer bhejo','int');
@@ -387,7 +425,10 @@ function bump(d){const inc=s=>s&&s.replace(/(\d+)(?!.*\d)/,m=>+m+1);
 function refresh(c){const old=ELS[c.id];if(!old)return;const n=build(c);n.classList.toggle('selc',sel===c.id);old.replaceWith(n)}
 
 /* ---------------- settings actions ---------------- */
-$('#sIp').addEventListener('change',e=>{S.ip=e.target.value.trim();saveS();applyNet();toast('IP save hua')});
+$('#sIp').addEventListener('change',e=>{S.ip=e.target.value.trim();saveS();applyNet();toast('IP save hua');setTimeout(queryAll,300)});
+$('#qNames').addEventListener('click',()=>{TS=Date.now();for(const k in VAL)if(k.endsWith('nt'))delete VAL[k];render();queryAll();toast('Naam + thumbnail refresh')});
+$('#sWeb').addEventListener('change',e=>{S.web=+e.target.value||8080;saveS();TS=Date.now();render()});
+$('#sTh').addEventListener('change',e=>{S.thumbs=e.target.value==='1';saveS();render()});
 $('#sPort').addEventListener('change',e=>{S.port=+e.target.value||7000;saveS();applyNet()});
 $('#sFbp').addEventListener('change',e=>{S.fbport=+e.target.value||7001;saveS();applyNet()});
 $('#sPgName').addEventListener('input',e=>{page().name=e.target.value.toUpperCase();saveL();renderPages()});
@@ -401,7 +442,7 @@ $('#imp').addEventListener('click',()=>{try{const o=JSON.parse($('#impTxt').valu
 $('#reset').addEventListener('click',()=>{if(!confirm('Apna layout hata ke default layout lagayein?'))return;L=null;L=defaultLayout();saveL();render();watchList();closeAll()});
 document.addEventListener('contextmenu',e=>e.preventDefault());
 
-load();render();applyNet();watchList();
+load();render();applyNet();watchList();setTimeout(queryAll,600);
 if(!S.ip)setTimeout(()=>$('#gear').click(),300);
 </script>
 </body></html>
