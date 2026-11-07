@@ -12,6 +12,10 @@ import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.webkit.WebChromeClient;
+import android.content.Intent;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,6 +43,7 @@ public class MainActivity extends Activity {
     private Thread fbThread;
     private DatagramSocket fbSock;
     private Vibrator vib;
+    private volatile Set<String> watched = new HashSet<String>();
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
     @Override
@@ -52,6 +57,7 @@ public class MainActivity extends Activity {
         ws.setDomStorageEnabled(true);
         ws.setAllowFileAccess(true);
         web.setWebViewClient(new WebViewClient());
+        web.setWebChromeClient(new WebChromeClient());
         web.setOverScrollMode(View.OVER_SCROLL_NEVER);
         web.setBackgroundColor(0xFF07070C);
         web.addJavascriptInterface(new Bridge(), "Android");
@@ -120,7 +126,7 @@ public class MainActivity extends Activity {
             int end = off + n;
             int j = strEnd(b, off, end);
             String addr = new String(b, off, j - off, UTF8);
-            if (!(addr.endsWith("/connected") || addr.endsWith("/name") || addr.endsWith("/video/opacity") || addr.equals("/composition/master"))) return;
+            if (!watched.contains(addr)) return;
             int i = (j + 4 - off) / 4 * 4 + off;
             int k = strEnd(b, i, end);
             String tags = new String(b, i, k - i, UTF8);
@@ -206,6 +212,27 @@ public class MainActivity extends Activity {
                 }
             } catch (Exception ignored) { }
             return "?";
+        }
+
+        @JavascriptInterface
+        public void watch(String json) {
+            try {
+                JSONArray a = new JSONArray(json);
+                Set<String> s = new HashSet<String>();
+                for (int i = 0; i < a.length(); i++) s.add(a.getString(i));
+                watched = s;
+            } catch (Exception ignored) { }
+        }
+
+        @JavascriptInterface
+        public void share(final String text) {
+            runOnUiThread(new Runnable() { public void run() {
+                Intent i = new Intent(Intent.ACTION_SEND);
+                i.setType("text/plain");
+                i.putExtra(Intent.EXTRA_SUBJECT, "VJ OSC Pad layout");
+                i.putExtra(Intent.EXTRA_TEXT, text);
+                startActivity(Intent.createChooser(i, "Layout share karo"));
+            }});
         }
 
         @JavascriptInterface
