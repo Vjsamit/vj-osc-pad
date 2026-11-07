@@ -45,6 +45,12 @@ public class MainActivity extends Activity {
     private Vibrator vib;
     private volatile Set<String> watched = new HashSet<String>();
     private volatile boolean learning = false;
+    private volatile boolean auto = true;
+    private volatile String bridgeName = "";
+    private volatile String bridgeIp = "";
+    private volatile long lastPong = 0;
+    private volatile boolean resAlive = false;
+    private Thread discThread;
     private static final java.util.regex.Pattern LEARN = java.util.regex.Pattern.compile("^/composition/layers/\\d+/clips/\\d+/(connected|select|selected)$");
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
@@ -68,6 +74,7 @@ public class MainActivity extends Activity {
         setContentView(web);
         hideBars();
         web.loadUrl("file:///android_asset/index.html");
+        startDiscovery();
     }
 
     private void hideBars() {
@@ -85,6 +92,66 @@ public class MainActivity extends Activity {
         tx.shutdownNow();
         if (sendSock != null) sendSock.close();
         super.onDestroy();
+    }
+
+    // ---------------- auto discovery of PC bridge
+    private void startDiscovery() {
+        discThread = new Thread(new Runnable() { public void run() {
+            DatagramSocket ds = null;
+            try {
+                ds = new DatagramSocket();
+                ds.setBroadcast(true);
+                ds.setSoTimeout(700);
+                byte[] buf = new byte[512];
+                while (!Thread.currentThread().isInterrupted()) {
+                    if (auto) {
+                        long now = System.currentTimeMillis();
+                        if (now - lastPong > 6000) {
+                            byte[] q = "VJPAD_DISCOVER".getBytes(UTF8);
+                            try { ds.send(new DatagramPacket(q, q.length, InetAddress.getByName("255.255.255.255"), 7099)); } catch (Exception ignored) { }
+                            String sb = subnetBroadcast();
+                            if (sb != null) try { ds.send(new DatagramPacket(q, q.length, InetAddress.getByName(sb), 7099)); } catch (Exception ignored) { }
+                            try {
+                                DatagramPacket p = new DatagramPacket(buf, buf.length);
+                                ds.receive(p);
+                                String r = new String(p.getData(), 0, p.getLength(), UTF8);
+                                if (r.startsWith("VJPAD_BRIDGE|")) {
+                                    String[] parts = r.split("\\|");
+                                    bridgeName = parts.length > 1 ? parts[1] : "PC";
+                                    targetPort = parts.length > 2 ? Integer.parseInt(parts[2].trim()) : 7010;
+                                    target = p.getAddress();
+                                    bridgeIp = target.getHostAddress();
+                                    lastPong = System.currentTimeMillis() - 3000;
+                                }
+                            } catch (Exception ignored) { }
+                        }
+                        if (target != null && !bridgeIp.isEmpty()) {
+                            try {
+                                JSONArray a = new JSONArray(); a.put(fbPort > 0 ? fbPort : 7001);
+                                byte[] pkt = encode("/vjpad/ping", a);
+                                if (sendSock == null) sendSock = new DatagramSocket();
+                                sendSock.send(new DatagramPacket(pkt, pkt.length, target, targetPort));
+                            } catch (Exception ignored) { }
+                        }
+                    }
+                    try { Thread.sleep(1500); } catch (InterruptedException e) { break; }
+                }
+            } catch (Exception ignored) {
+            } finally { if (ds != null) ds.close(); }
+        }});
+        discThread.setDaemon(true);
+        discThread.start();
+    }
+
+    private String subnetBroadcast() {
+        try {
+            for (NetworkInterface ni : Collections.list(NetworkInterface.getNetworkInterfaces())) {
+                if (!ni.isUp() || ni.isLoopback()) continue;
+                for (java.net.InterfaceAddress ia : ni.getInterfaceAddresses())
+                    if (ia.getAddress() instanceof Inet4Address && ia.getBroadcast() != null) return ia.getBroadcast().getHostAddress();
+            }
+        } catch (Exception ignored) { }
+        return null;
     }
 
     // ---------------- OSC encoding
@@ -130,6 +197,13 @@ public class MainActivity extends Activity {
             int end = off + n;
             int j = strEnd(b, off, end);
             String addr = new String(b, off, j - off, UTF8);
+            if (addr.equals("/vjpad/pong")) {
+                lastPong = System.currentTimeMillis();
+                int ti = (j + 4 - off) / 4 * 4 + off; int tk = strEnd(b, ti, end);
+                int vi = (tk + 4 - off) / 4 * 4 + off;
+                if (tk - ti >= 2 && b[ti + 1] == 'i') resAlive = ByteBuffer.wrap(b, vi, 4).getInt() == 1;
+                return;
+            }
             boolean w = watched.contains(addr);
             if (!w && !learning) return;
             if (!w && (addr.contains("/transport/position") || addr.contains("/tempocontroller/") || addr.endsWith("/thumbnail"))) return;
@@ -185,6 +259,7 @@ public class MainActivity extends Activity {
     class Bridge {
         @JavascriptInterface
         public void config(final String ip, final int port, final int feedbackPort) {
+            auto = false; bridgeIp = "";
             targetPort = port;
             tx.execute(new Runnable() { public void run() {
                 try { target = InetAddress.getByName(ip.trim()); } catch (Exception e) { target = null; }
@@ -222,6 +297,24 @@ public class MainActivity extends Activity {
 
         @JavascriptInterface
         public void learn(boolean on) { learning = on; }
+
+        @JavascriptInterface
+        public void setAuto(boolean on, int feedbackPort) {
+            auto = on;
+            if (on) { target = null; bridgeIp = ""; lastPong = 0; }
+            startFeedback(feedbackPort);
+        }
+
+        @JavascriptInterface
+        public String status() {
+            try {
+                JSONObject o = new JSONObject();
+                boolean con = auto ? (System.currentTimeMillis() - lastPong < 6000) : (target != null);
+                o.put("auto", auto); o.put("connected", con); o.put("ip", auto ? bridgeIp : (target != null ? target.getHostAddress() : ""));
+                o.put("name", bridgeName); o.put("res", auto ? resAlive : false);
+                return o.toString();
+            } catch (Exception e) { return "{}"; }
+        }
 
         @JavascriptInterface
         public void watch(String json) {

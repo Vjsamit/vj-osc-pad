@@ -14,6 +14,7 @@ html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:600 12
 .b:active{filter:brightness(1.5)}
 #dot{width:10px;height:10px;border-radius:50%;background:#f33;align-self:center;margin:0 4px;box-shadow:0 0 8px #f33;flex:none}
 #dot.ok{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+#dot.half{background:#ffb020;box-shadow:0 0 8px #ffb020}
 #pages{flex:1;display:flex;gap:5px;overflow-x:auto;touch-action:pan-x;scrollbar-width:none}
 #pages::-webkit-scrollbar{display:none}
 .pg{flex:none}
@@ -97,7 +98,7 @@ p.n{color:var(--dim);font-weight:400;line-height:1.45;margin:6px 0}
 <body>
 <div id="app">
   <div id="bar">
-    <div id="dot"></div>
+    <div id="dot"></div><div id="conn" style="align-self:center;color:var(--dim);font-size:11px;max-width:120px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"></div>
     <div id="pages"></div>
     <div class="b" id="addCtl" style="display:none">＋ ADD</div>
     <div class="b" id="edit">✎ EDIT</div>
@@ -130,14 +131,15 @@ p.n{color:var(--dim);font-weight:400;line-height:1.45;margin:6px 0}
 <!-- settings sheet -->
 <div class="sheet" id="sets"><div class="sh-h"><div class="t">Settings</div><div class="b" id="sClose">✓</div></div><div class="sh-b">
   <h4>CONNECTION</h4>
-  <div class="row"><span>Resolume PC IP</span><input id="sIp" placeholder="192.168.1.5" inputmode="decimal"></div>
-  <div class="row"><span>OSC Input port</span><input id="sPort" type="number"></div>
+  <div class="row"><span>Mode</span><select id="sMode"><option value="auto">Auto – PC Bridge (aasaan)</option><option value="manual">Manual – IP khud daalo</option></select></div>
+  <div class="row manual"><span>Resolume PC IP</span><input id="sIp" placeholder="192.168.1.5" inputmode="decimal"></div>
+  <div class="row manual"><span>OSC Input port</span><input id="sPort" type="number"></div>
   <div class="row"><span>Feedback port</span><input id="sFbp" type="number"></div>
   <div class="row"><span>Webserver port</span><input id="sWeb" type="number"></div>
   <div class="row"><span>Thumbnails</span><select id="sTh"><option value="1">Dikhao</option><option value="0">Mat dikhao</option></select></div>
   <p class="n" id="myip"></p>
   <div class="grid2"><div class="b" id="qNames">↻ Naam + thumbnail refresh</div></div>
-  <p class="n">Resolume → Preferences → OSC → <b>OSC Input</b> ON, port 7000. PC ka IP: cmd me <b>ipconfig</b> → IPv4 Address. Light/naam ke liye <b>OSC Output</b> ON, IP = upar likha phone ka IP, port 7001. Thumbnail ke liye Preferences → <b>Webserver</b> ON, port 8080.</p>
+  <p class="n"><b>Auto mode:</b> PC par VJ Pad Bridge chalao, bas. Resolume → Preferences → OSC → <b>OSC Input</b> ON port 7000, <b>OSC Output</b> ON IP <b>127.0.0.1</b> port 7001, <b>Webserver</b> ON port 8080 (thumbnail).<br><b>Manual mode:</b> Resolume → Preferences → OSC → <b>OSC Input</b> ON, port 7000. PC ka IP: cmd me <b>ipconfig</b> → IPv4 Address. Light/naam ke liye <b>OSC Output</b> ON, IP = upar likha phone ka IP, port 7001. Thumbnail ke liye Preferences → <b>Webserver</b> ON, port 8080.</p>
   <h4>PAGES</h4>
   <div class="row"><span>Is page ka naam</span><input id="sPgName"></div>
   <div class="grid2"><div class="b" id="pgAdd">＋ Naya page</div><div class="b" id="pgDup">⧉ Page copy</div><div class="b" id="pgLeft">◀ Page left</div><div class="b" id="pgRight">Page right ▶</div><div class="b danger" id="pgDel">🗑 Page delete</div></div>
@@ -146,7 +148,7 @@ p.n{color:var(--dim);font-weight:400;line-height:1.45;margin:6px 0}
   <textarea id="impTxt" placeholder="Layout ka text yahan paste karo, phir Import dabao"></textarea>
   <div class="grid2"><div class="b danger" id="reset">↺ Default layout</div></div>
   <h4>RESOLUME ME MAP KAISE KAREIN</h4>
-  <p class="n">Resolume me MIDI jaisa learn nahi hota, wo apne fixed address sunta hai. Isliye: ✎ EDIT → control par tap → <b>🎯 LEARN</b> → Resolume me wo slider/button/effect <b>mouse se hilao</b> → app address khud seekh lega. (Resolume OSC Output ON hona chahiye, IP = phone ka IP.) Ya Resolume me Shortcuts → Edit OSC me control click karke uska address dekho aur app me OSC address me likh do.</p>
+  <p class="n">Resolume me MIDI jaisa learn nahi hota, wo apne fixed address sunta hai. Isliye: ✎ EDIT → control par tap → <b>🎯 LEARN</b> → Resolume me wo slider/button/effect <b>mouse se hilao</b> → app address khud seekh lega. (Resolume OSC Output ON: Auto mode me IP 127.0.0.1, Manual me phone ka IP.) Ya Resolume me Shortcuts → Edit OSC me control click karke uska address dekho aur app me OSC address me likh do.</p>
 </div></div>
 <div id="toast"></div>
 
@@ -155,7 +157,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BR=window.Android||null;
 const COLS=['#ff2e88','#18e0ff','#ffb020','#2bff88','#a96bff','#ff5a3c','#3c8cff','#f4ff3c','#ffffff','#ff8ad8'];
 const GW=24,GH=12;
-let S={ip:'',port:7000,fbport:7001,web:8080,thumbs:true};let TS=Date.now();
+let S={mode:'auto',ip:'',port:7000,fbport:7001,web:8080,thumbs:true};let HOST='',CONN=false;let TS=Date.now();
 let L=null;           // layout {pages:[{name,ctls:[]}], cur:0}
 let editing=false, sel=null;
 const VAL={};         // runtime values  id -> value
@@ -177,9 +179,22 @@ function oscC(a,...v){if(!a)return;qm.set(a,v);if(!raf)raf=requestAnimationFrame
 function typed(c,v){return c.int?Math.round(v):{f:v}}
 function haptic(){if(BR)BR.vibrate()}
 function applyNet(){
-  $('#dot').classList.toggle('ok',!!S.ip);
-  if(BR){BR.config(S.ip||'0.0.0.0',+S.port||7000,+S.fbport||7001);$('#myip').textContent='Is phone ka IP: '+BR.myIp()+'  ·  feedback port '+(S.fbport||7001)}
+  $$('.manual').forEach(e=>e.style.display=S.mode==='auto'?'none':'flex');
+  if(!BR)return;
+  if(S.mode==='auto')BR.setAuto(true,+S.fbport||7001);else BR.config(S.ip||'0.0.0.0',+S.port||7000,+S.fbport||7001);
+  pollStatus();
 }
+function pollStatus(){
+  if(!BR||!BR.status)return;let st={};try{st=JSON.parse(BR.status())}catch(e){}
+  const was=CONN;CONN=!!st.connected;const h=S.mode==='auto'?(st.ip||''):S.ip;const hostChanged=h!==HOST;HOST=h;
+  $('#dot').classList.toggle('ok',CONN);$('#dot').classList.toggle('half',CONN&&S.mode==='auto'&&!st.res);
+  $('#conn').textContent=S.mode==='auto'?(CONN?(st.name||'PC'):'PC dhoondh raha…'):'';
+  $('#myip').innerHTML=S.mode==='auto'
+    ?(CONN?`✅ PC Bridge juda: <b>${st.name}</b> (${st.ip}) · Resolume: ${st.res?'✅ juda':'❌ feedback nahi (Resolume OSC Output = 127.0.0.1 : 7001?)'}`:'🔎 PC par <b>VJ Pad Bridge</b> chalu karo. Phone aur PC ek hi Wi-Fi par hon.')
+    :'Is phone ka IP: '+BR.myIp()+' · feedback port '+(S.fbport||7001);
+  if(CONN&&(!was||hostChanged)){TS=Date.now();if(hostChanged)render();setTimeout(queryAll,300);if(!was)toast('✅ Juda: '+(st.name||HOST))}
+}
+setInterval(pollStatus,1000);
 function watchList(){const s=new Set();L.pages.forEach(p=>p.ctls.forEach(c=>{[c.addr,c.fb,c.nameAddr,c.addrX,c.addrY].forEach(a=>a&&s.add(a))}));
   if(BR&&BR.watch)BR.watch(JSON.stringify([...s]))}
 
@@ -251,7 +266,7 @@ function build(c){
 }
 /* pad + toggle */
 function thumbUrl(c){const m=(c.addr||'').match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/connect$/);
-  if(!m||!S.thumbs||!S.ip)return null;return `http://${S.ip}:${S.web||8080}/api/v1/composition/layers/${m[1]}/clips/${m[2]}/thumbnail?t=${TS}`}
+  if(!m||!S.thumbs||!HOST)return null;return `http://${HOST}:${S.web||8080}/api/v1/composition/layers/${m[1]}/clips/${m[2]}/thumbnail?t=${TS}`}
 function padLogic(c,inn,lab){
   const tu=thumbUrl(c);
   if(tu&&VAL[c.id+'nt']!==tu){const im=document.createElement('img');im.className='th';im.src=tu;
@@ -369,7 +384,7 @@ function openSheet(id){closeAll();$(id).classList.add('open')}
 $('#pClose').addEventListener('click',()=>{closeAll();watchList()});$('#aClose').addEventListener('click',closeAll);
 $('#sClose').addEventListener('click',closeAll);
 $('#addCtl').addEventListener('click',()=>openSheet('#adds'));
-$('#gear').addEventListener('click',()=>{$('#sWeb').value=S.web||8080;$('#sTh').value=S.thumbs?'1':'0';$('#sIp').value=S.ip;$('#sPort').value=S.port;$('#sFbp').value=S.fbport;$('#sPgName').value=page().name;applyNet();openSheet('#sets')});
+$('#gear').addEventListener('click',()=>{$('#sMode').value=S.mode;$('#sWeb').value=S.web||8080;$('#sTh').value=S.thumbs?'1':'0';$('#sIp').value=S.ip;$('#sPort').value=S.port;$('#sFbp').value=S.fbport;$('#sPgName').value=page().name;applyNet();openSheet('#sets')});
 
 function freeSpot(w,h){const occ=(x,y)=>page().ctls.some(c=>x<c.x+c.w&&x+w>c.x&&y<c.y+c.h&&y+h>c.y);
   for(let y=0;y+h<=GH;y++)for(let x=0;x+w<=GW;x++)if(!occ(x,y))return[x,y];return[0,0]}
@@ -443,6 +458,7 @@ function bump(d){const inc=s=>s&&s.replace(/(\d+)(?!.*\d)/,m=>+m+1);
 function refresh(c){const old=ELS[c.id];if(!old)return;const n=build(c);n.classList.toggle('selc',sel===c.id);old.replaceWith(n)}
 
 /* ---------------- settings actions ---------------- */
+$('#sMode').addEventListener('change',e=>{S.mode=e.target.value;saveS();applyNet();render()});
 $('#sIp').addEventListener('change',e=>{S.ip=e.target.value.trim();saveS();applyNet();toast('IP save hua');setTimeout(queryAll,300)});
 $('#qNames').addEventListener('click',()=>{TS=Date.now();for(const k in VAL)if(k.endsWith('nt'))delete VAL[k];render();queryAll();toast('Naam + thumbnail refresh')});
 $('#sWeb').addEventListener('change',e=>{S.web=+e.target.value||8080;saveS();TS=Date.now();render()});
@@ -461,6 +477,6 @@ $('#reset').addEventListener('click',()=>{if(!confirm('Apna layout hata ke defau
 document.addEventListener('contextmenu',e=>e.preventDefault());
 
 load();render();applyNet();watchList();setTimeout(queryAll,600);
-if(!S.ip)setTimeout(()=>$('#gear').click(),300);
+if(S.mode!=='auto'&&!S.ip)setTimeout(()=>$('#gear').click(),300);
 </script>
 </body></html>

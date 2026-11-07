@@ -1,11 +1,11 @@
-name: Build APK
+name: Build APK + PC Bridge
 on:
   push:
   workflow_dispatch:
 permissions:
   contents: write
 jobs:
-  build:
+  apk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -16,10 +16,35 @@ jobs:
       - run: gradle assembleDebug --no-daemon
       - run: cp app/build/outputs/apk/debug/app-debug.apk VJ_OSC_Pad.apk
       - uses: actions/upload-artifact@v4
-        with: { name: VJ_OSC_Pad, path: VJ_OSC_Pad.apk }
+        with: { name: apk, path: VJ_OSC_Pad.apk }
+  bridge:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pyinstaller
+      - run: pyinstaller --onefile --noconsole --name VJPadBridge --icon bridge/icon.ico --add-data "bridge/icon.ico;." bridge/vjpad_bridge.py
+      - name: Installer (Inno Setup)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" bridge\installer.iss
+      - uses: actions/upload-artifact@v4
+        with: { name: bridge, path: "dist/*.exe" }
+  release:
+    needs: [apk, bridge]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { path: out, merge-multiple: true }
+      - run: ls -la out
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: VJ OSC Pad APK
-          files: VJ_OSC_Pad.apk
+          name: VJ OSC Pad (APK + PC Bridge)
+          files: |
+            out/VJ_OSC_Pad.apk
+            out/VJPadBridge_Setup.exe
+            out/VJPadBridge.exe
           make_latest: true
