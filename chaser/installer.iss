@@ -1,6 +1,6 @@
 [Setup]
 AppName=VJ Chaser
-AppVersion=1.0
+AppVersion=2.0
 AppPublisher=VJ Samir
 DefaultDirName={autopf}\VJ Chaser
 DefaultGroupName=VJ Chaser

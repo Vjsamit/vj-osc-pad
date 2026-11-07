@@ -4,144 +4,213 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VJ Chaser</title>
 <style>
-:root{--bg:#08080d;--p1:#11111a;--p2:#181826;--ln:#27273d;--tx:#ececf6;--dim:#8585a3;--acc:#ff2e88;--on:#18e0ff;--ok:#2bff88;--warn:#ffb020}
+:root{--bg:#13222b;--bg2:#0f1c24;--side:#253540;--side2:#2e404c;--fly:#2a3a45;--tx:#f2f6f9;--dim:#8fa3b1;--blue:#1aa7f0;--blue2:#0a5a87;--blue3:#0d4a6e;--org:#ff9a0d;--line:#3a4e5b}
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:500 13px/1.3 "Segoe UI",system-ui,sans-serif;overflow:hidden;user-select:none}
-button,select,input{font:inherit;color:var(--tx);background:var(--p2);border:1px solid var(--ln);border-radius:7px;padding:6px 10px}
-button{cursor:pointer;white-space:nowrap}
-button:hover{border-color:#44446a;background:#202032}
-button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
-button.on{background:var(--on);border-color:var(--on);color:#000}
-input[type=number]{width:70px}
-#app{display:grid;grid-template-columns:230px 1fr 250px;grid-template-rows:52px 1fr 118px;height:100vh}
-header{grid-column:1/4;display:flex;gap:8px;align-items:center;padding:0 12px;border-bottom:1px solid var(--ln);background:var(--p1)}
-.logo{font-weight:800;letter-spacing:2px;color:var(--acc);margin-right:10px;font-size:15px}
-.sp{flex:1}
-#status{color:var(--dim);font-size:12px;max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#status.ok{color:var(--ok)}
-aside{background:var(--p1);border-right:1px solid var(--ln);padding:10px;overflow:auto;display:flex;flex-direction:column;gap:8px}
-aside.r{border-right:0;border-left:1px solid var(--ln)}
-h3{margin:6px 0 2px;font-size:11px;letter-spacing:1.5px;color:var(--dim);font-weight:700}
-.seq{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;background:var(--p2);border:1px solid transparent;cursor:pointer}
-.seq .n{width:24px;height:24px;border-radius:6px;background:#26263c;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
-.seq .t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.seq .c{color:var(--dim);font-size:11px}
-.seq.sel{border-color:var(--acc)}
-.seq.sel .n{background:var(--acc)}
-.row{display:flex;gap:6px;flex-wrap:wrap}
-.row>*{flex:1}
-main{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 40%,#12121e,#07070b)}
-#stage{position:absolute;inset:14px;display:flex;align-items:center;justify-content:center}
-svg{max-width:100%;max-height:100%;background:#000;box-shadow:0 0 0 1px var(--ln)}
-.sl{fill:#15151f;stroke:#3a3a58;cursor:pointer;transition:fill .05s}
-.sl:hover{stroke:#9a9ad0}
-.sl.on{fill:var(--on);stroke:#bff6ff}
-.sl.play{fill:#fff}
-.lbl{fill:#6b6b8a;pointer-events:none;font-weight:600}
-.sl.on+.lbl{fill:#003a44}
-#hint{position:absolute;left:16px;bottom:10px;color:var(--dim);font-size:12px;pointer-events:none}
-footer{grid-column:1/4;border-top:1px solid var(--ln);background:var(--p1);display:flex;flex-direction:column;padding:8px 12px;gap:8px}
-#steps{display:flex;gap:5px;overflow-x:auto;padding-bottom:4px;flex:1;align-items:stretch}
-.st{flex:none;width:54px;border-radius:8px;background:var(--p2);border:1px solid var(--ln);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;gap:2px}
-.st b{font-size:15px}
-.st small{color:var(--dim);font-size:10px}
-.st.sel{border-color:var(--acc);background:#2a1022}
-.st.play{box-shadow:inset 0 -4px 0 var(--on)}
-.st canvas{width:44px;height:22px;image-rendering:pixelated}
-.tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-.tools .lab{color:var(--dim);font-size:12px;margin-left:6px}
-label.f{display:flex;flex-direction:column;gap:3px;color:var(--dim);font-size:11px}
-label.f>*{color:var(--tx)}
-.note{color:var(--dim);font-size:11.5px;line-height:1.45}
-.note b{color:var(--tx)}
-code{color:var(--on)}
-#drop{position:fixed;inset:0;background:#000b;border:3px dashed var(--acc);display:none;align-items:center;justify-content:center;font-size:20px;z-index:9}
-#modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:8}
-#modal .box{background:var(--p1);border:1px solid var(--ln);border-radius:12px;padding:16px;width:560px;max-height:80vh;overflow:auto}
-.xmli{padding:8px;border-radius:7px;background:var(--p2);margin:5px 0;cursor:pointer;word-break:break-all;font-size:12px}
-.xmli:hover{border:1px solid var(--acc)}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:600 13px/1.25 "Segoe UI",system-ui,sans-serif;overflow:hidden;user-select:none}
+button,select,input{font:inherit;color:var(--tx)}
+/* top */
+#top{position:fixed;left:0;right:0;top:0;height:46px;display:flex;align-items:center;gap:10px;padding-left:96px;background:linear-gradient(#1b2b35,#16252e);border-bottom:1px solid #0c161c;z-index:5}
+.pill{display:flex;align-items:center;gap:6px;background:var(--blue);border-radius:14px;padding:3px 12px;font-size:12px;color:#fff;cursor:pointer}
+.ico{width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:var(--blue);cursor:pointer;border-radius:6px;font-size:16px}
+.ico:hover,.ico.on{background:#ffffff14}
+#doc{font-size:15px;font-weight:700;padding-left:12px;border-left:1px solid var(--line);margin-left:4px;outline:none;min-width:120px}
+#save{margin-left:auto;margin-right:14px;font-size:12px;color:var(--dim)}
+#save.ok{color:#5ee08a}
+/* side menu */
+#side{position:fixed;left:0;top:46px;bottom:0;width:90px;background:var(--bg2);z-index:6;display:flex;flex-direction:column}
+.mi{height:38px;display:flex;align-items:center;padding-left:9px;font-size:14px;font-weight:700;background:var(--side);border-bottom:1px solid #1c2a33;cursor:pointer}
+.mi:hover{background:var(--side2)}
+.mi.sel{background:var(--blue)}
+#ver{margin-top:auto;padding:8px;font-size:10px;color:var(--dim)}
+.fly{position:fixed;left:90px;top:46px;width:250px;max-height:calc(100vh - 60px);background:var(--fly);z-index:7;display:none;flex-direction:column;box-shadow:6px 6px 24px #0008;border-right:3px solid var(--org)}
+.fly.open{display:flex}
+.fly .sc{overflow-y:auto;flex:1}
+.fi{display:flex;align-items:center;gap:8px;min-height:36px;padding:0 10px;border-bottom:1px solid #1f2d36;cursor:pointer;font-size:13px}
+.fi:hover{background:#ffffff0c}
+.fi.sel{background:var(--blue)}
+.fi .sp{flex:1}
+.fi small{color:var(--dim);font-weight:500}
+.ob{color:var(--org);cursor:pointer;font-size:15px;padding:2px 4px}
+.ob:hover{filter:brightness(1.3)}
+.eye{width:22px;text-align:center;color:var(--org);cursor:pointer;font-size:13px}
+.eye.off{color:#55697a}
+.sl-i{font-size:11px;min-height:24px;padding-left:12px}
+.sl-i .nm{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:170px}
+.sl-i.hi{background:#1aa7f033}
+.grp{font-size:13px;background:#24343f}
+.add{display:flex;justify-content:flex-end;padding:8px 10px}
+.add span{width:22px;height:22px;border-radius:50%;background:var(--org);color:#14222b;display:flex;align-items:center;justify-content:center;font-weight:900;cursor:pointer}
+.fact .fi{cursor:default}
+.fact .btn{flex:1;cursor:pointer;padding:9px 0}
+.fact .btn:hover{background:#ffffff0c}
+.fact .btn.on{color:var(--org)}
+.pm{color:var(--blue);font-size:16px;cursor:pointer;width:22px;text-align:center}
+.val{min-width:34px;text-align:center}
+select.dd{width:100%;background:transparent;border:0;font-weight:700;text-align:center;cursor:pointer;padding:9px 0}
+select.dd option{background:#2a3a45}
+.sep{height:6px;background:#1f2d36}
+.hint{color:var(--dim);font-weight:500;font-size:11.5px;padding:8px 10px;line-height:1.45}
+/* canvas */
+#view{position:fixed;left:90px;top:46px;right:0;bottom:118px;overflow:hidden;cursor:default}
+#view.pan{cursor:grab}
+#view.panning{cursor:grabbing}
+#world{position:absolute;left:0;top:0;transform-origin:0 0}
+svg{display:block;overflow:visible}
+.comp{fill:var(--blue2)}
+.sl{fill:#0b4f78;stroke:#2c84b5;cursor:pointer}
+.sl.hid{display:none}
+.sl:hover{stroke:#c9ecff}
+.sl.on{fill:var(--blue);stroke:#d6f3ff}
+.sl.flash{fill:#fff}
+.sl.hl{stroke:var(--org)}
+.tl{fill:#9fd6f3;pointer-events:none;font-weight:700;opacity:.0}
+#view.labels .tl{opacity:.85}
+.sl.on+.tl{fill:#06324d}
+/* bottom */
+#bot{position:fixed;left:90px;right:0;bottom:0;height:118px;display:flex;align-items:center;gap:14px;padding:0 20px 0 40px;background:linear-gradient(#13222b00,#101c23 40%)}
+.tr{display:grid;grid-template-columns:repeat(3,auto);gap:4px 8px;align-items:center;justify-items:center}
+.rb{width:24px;height:24px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#0d2230;font-size:11px;cursor:pointer;font-weight:900}
+.rb.big{width:34px;height:34px;font-size:15px}
+.rb.on{background:var(--org)}
+.seqtag{display:flex;align-items:center;gap:6px;grid-column:1/4}
+.seqtag .n{width:20px;height:20px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff}
+.seqtag .t{background:var(--blue);border-radius:12px;padding:3px 14px;font-size:11.5px;color:#fff;max-width:150px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.cnt{display:grid;grid-template-rows:auto auto auto;justify-items:center;gap:2px}
+.mini{width:17px;height:17px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;color:#0d2230;font-size:12px;font-weight:900;cursor:pointer}
+.cntv{width:26px;height:26px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;outline:none}
+.dirs{display:grid;gap:5px;justify-items:center;color:var(--blue);font-size:16px}
+.dirs span{cursor:pointer;line-height:1}
+.dirs span.on{color:var(--org)}
+#steps{flex:1;display:flex;gap:10px;overflow-x:auto;align-items:center;height:100%;padding:0 4px}
+#steps::-webkit-scrollbar{height:6px}#steps::-webkit-scrollbar-thumb{background:#2e404c;border-radius:3px}
+.st{flex:none;width:48px;height:48px;border-radius:4px;background:var(--blue3);display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;position:relative;color:#fff}
+.st.has{background:var(--blue);width:56px;height:56px}
+.st.cur{background:var(--org);width:56px;height:56px}
+.st.cur.empty{background:#ffbf66}
+.st.play::after{content:"";position:absolute;left:4px;right:4px;bottom:-7px;height:3px;border-radius:2px;background:#fff}
+.st canvas{position:absolute;inset:5px;width:calc(100% - 10px);height:calc(100% - 10px);opacity:.55;border-radius:2px}
+.st b{position:relative;z-index:1;text-shadow:0 1px 2px #0008}
+/* modal */
+#modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:20}
+#modal .box{background:var(--fly);border-top:3px solid var(--org);padding:16px;width:620px;max-height:80vh;overflow:auto}
+#modal h3{margin:0 0 10px}
+.xi{padding:9px;background:#1f2d36;margin:5px 0;cursor:pointer;font-size:12px;word-break:break-all}
+.xi:hover{background:var(--blue)}
+.mbtn{background:var(--blue);border:0;padding:8px 14px;cursor:pointer;margin-right:6px}
+#drop{position:fixed;inset:0;background:#000b;border:3px dashed var(--org);display:none;align-items:center;justify-content:center;font-size:20px;z-index:30}
+#tip{position:fixed;pointer-events:none;background:#000d;padding:3px 8px;font-size:11px;border-radius:4px;display:none;z-index:40}
 </style></head>
 <body>
-<div id="app">
-<header>
-  <div class="logo">VJ CHASER</div>
-  <button id="bXml" class="pri">⇪ Resolume Layout</button>
-  <span class="sp"></span>
-  <span id="status">—</span>
-  <span class="sp"></span>
-  <label class="f" style="flex-direction:row;align-items:center;gap:6px">BPM <input id="bpm" type="number" value="128" min="20" max="300"></label>
-  <select id="slen" title="Preview step length"><option value="0.25">1/16</option><option value="0.5">1/8</option><option value="1" selected>1/4</option><option value="2">1/2</option><option value="4">1 Bar</option></select>
-  <button id="bPlay">▶ Preview</button>
-</header>
+<div id="top">
+  <div class="pill" id="zoomPill" title="Zoom (mouse wheel)"><span id="zv">100%</span> 🔍</div>
+  <div class="ico" id="fit" title="Fit to screen">⛶</div>
+  <div class="ico" id="hand" title="Pan (Space dabakar bhi kheench sakte ho)">✋</div>
+  <div class="ico" id="lbl" title="Slice naam dikhao">🏷</div>
+  <div id="doc" contenteditable="true" spellcheck="false">NewChaserDocument</div>
+  <div id="save">—</div>
+</div>
 
-<aside>
-  <h3>SEQUENCES  <span style="font-weight:400">(Resolume me "Sequence" number)</span></h3>
-  <div id="seqs"></div>
-  <div class="row"><button id="sAdd">＋ New</button><button id="sDup">⧉ Copy</button></div>
-  <div class="row"><button id="sUp">▲</button><button id="sDown">▼</button><button id="sDel">🗑</button></div>
-  <label class="f">Naam<input id="sName"></label>
-  <h3 style="margin-top:14px">PROJECT</h3>
-  <div class="row"><button id="pExp">⇩ Backup</button><button id="pImp">⇧ Load backup</button></div>
-  <input id="fileProj" type="file" accept=".json" hidden>
-  <input id="fileXml" type="file" accept=".xml" hidden>
-  <p class="note" id="where"></p>
-</aside>
+<div id="side">
+  <div class="mi" data-m="file">File</div>
+  <div class="mi" data-m="views">Views</div>
+  <div class="mi" data-m="seqs">Sequences</div>
+  <div class="mi" data-m="fact">Factory</div>
+  <div class="mi" data-m="export">Export</div>
+  <div class="mi" data-m="help">Help</div>
+  <div id="ver">VJ Chaser v2.0</div>
+</div>
 
-<main>
-  <div id="stage"></div>
-  <div id="hint">Panel par click = on/off · kheencho = kai panels ek saath · ←/→ step badlo · Space = preview</div>
-</main>
+<!-- flyouts -->
+<div class="fly" id="f-file"><div class="sc">
+  <div class="fi" id="fNew">New</div>
+  <div class="fi" id="fLoad">Load…</div>
+  <div class="fi" id="fSave">Save As…</div>
+  <div class="fi" id="fRelink">Relink (Resolume layout)</div>
+</div></div>
+<div class="fly" id="f-views"><div class="sc" id="viewsList"></div><div class="add"><span id="vAdd" title="Naya view (abhi dikh rahe slices se)">+</span></div></div>
+<div class="fly" id="f-seqs"><div class="sc" id="seqList"></div><div class="add"><span id="sAdd" title="Naya sequence">+</span></div></div>
+<div class="fly fact" id="f-fact"><div class="sc">
+  <div class="fi"><select class="dd" id="fkOri">
+    <option value="h">Horizontal</option><option value="v">Vertical</option><option value="d1">Diagonal ↘</option><option value="d2">Diagonal ↙</option>
+    <option value="r">Radial</option><option value="i">Index (order)</option><option value="s">Single (one by one)</option><option value="rnd">Random</option><option value="all">All / None</option>
+  </select></div>
+  <div class="fi"><div class="btn" id="fkFX">Flip X</div></div>
+  <div class="fi"><div class="btn" id="fkFY">Flip Y</div></div>
+  <div class="sep"></div>
+  <div class="fi">Block<span class="sp"></span><span class="val" id="fkBlockV">1</span><span class="pm" id="fkBm">−</span><span class="pm" id="fkBp">+</span></div>
+  <div class="fi">Modulo<span class="sp"></span><span class="val" id="fkModV">OFF</span><span class="pm" id="fkMm">−</span><span class="pm" id="fkMp">+</span></div>
+  <div class="fi">Width<span class="sp"></span><span class="val" id="fkWV">1</span><span class="pm" id="fkWm">−</span><span class="pm" id="fkWp">+</span></div>
+  <div class="sep"></div>
+  <div class="fi"><div class="btn" id="fkMX">Mirror X</div></div>
+  <div class="fi"><div class="btn" id="fkMY">Mirror Y</div></div>
+  <div class="fi"><div class="btn" id="fkInv">Invert</div></div>
+  <div class="fi"><div class="btn" id="fkSh">Shuffle</div></div>
+  <div class="sep"></div>
+  <div class="fi"><div class="btn" id="fkReset">Reset Grid</div></div>
+  <div class="hint">Factory sirf <b>dikh rahe slices</b> (Views) par pattern banata hai aur current sequence ko badal deta hai. Block = kitni lines ek step me, Modulo = har N-th line saath, Width = trail.</div>
+</div></div>
+<div class="fly" id="f-export"><div class="sc">
+  <div class="fi" id="eInput">Input Map (PNG)</div>
+  <div class="fi" id="ePlugin">Resolume plugin ko bhejo</div>
+  <div class="hint" id="eWhere"></div>
+</div></div>
+<div class="fly" id="f-help"><div class="sc"><div class="hint">
+  <b>Slice click</b> = current step me on/off · <b>kheencho</b> = kai slices<br>
+  <b>Mouse wheel</b> = zoom · <b>Space + kheencho</b> / ✋ = pan · <b>F</b> = fit<br>
+  <b>← →</b> step badlo · <b>Enter</b> play/stop · <b>Ctrl+C / Ctrl+V</b> step copy/paste · <b>Delete</b> step khaali<br><br>
+  <b>Resolume:</b> layer/composition par effect <b>VJ Chaser</b> lagao → <b>Sequence</b> = yahan ka number → <b>Step Length</b>, <b>Direction</b>, <b>Mode</b>, <b>Fade</b>.<br>
+  Har badlav apne aap save hota hai aur Resolume me 1 second me update ho jaata hai.
+</div></div></div>
 
-<aside class="r">
-  <h3>PATTERN BANAO</h3>
-  <label class="f">Pattern
-    <select id="gType">
-      <option value="lr">Left → Right</option><option value="rl">Right → Left</option>
-      <option value="tb">Top → Bottom</option><option value="bt">Bottom → Top</option>
-      <option value="pingx">Left ↔ Right (ping pong)</option>
-      <option value="center">Center → Bahar</option><option value="outside">Bahar → Center</option>
-      <option value="diag">Diagonal</option><option value="snake">Snake (ek-ek panel)</option>
-      <option value="one">Ek-ek panel (order)</option><option value="rand1">Random ek panel</option>
-      <option value="randhalf">Random aadhe panels</option><option value="alt">Alternate (1-0-1-0)</option>
-      <option value="flash">Sab ON / Sab OFF</option><option value="fill">Fill (bharte jao)</option>
-    </select></label>
-  <label class="f">Ek saath kitni lines/panels<input id="gWidth" type="number" value="1" min="1" max="64"></label>
-  <label class="f">Random steps<input id="gCount" type="number" value="16" min="1" max="256"></label>
-  <div class="row"><button id="gGo" class="pri">⚡ Banao (replace)</button></div>
-  <div class="row"><button id="gAdd">＋ Aage jodo</button></div>
-  <h3 style="margin-top:14px">RESOLUME ME</h3>
-  <p class="note">1. Layer/Composition par effect <b>VJ Chaser</b> lagao.<br>2. <b>Sequence</b> = yahan ka number.<br>3. <b>Step Length</b> se speed (BPM sync).<br>4. <b>Mode</b>: Mask Video / White Chase / Add Flash.<br>5. <b>Fade</b> se trail.<br>Yahan kuch bhi badlo, Resolume me turant update hota hai.</p>
-</aside>
+<div id="view"><div id="world"></div></div>
 
-<footer>
-  <div class="tools">
-    <b id="stepTitle">Step 1 / 1</b>
-    <button id="tAdd">＋ Step</button><button id="tDup">⧉ Duplicate</button><button id="tDel">🗑 Step</button>
-    <span class="lab">Step:</span><button id="tAll">Sab ON</button><button id="tNone">Sab OFF</button><button id="tInv">Ulta</button>
-    <button id="tCopy">Copy</button><button id="tPaste">Paste</button><button id="tL">◀ Move</button><button id="tR">Move ▶</button>
-    <span class="sp"></span><span class="lab">Steps kitne:</span><input id="tCount" type="number" min="1" max="512"><button id="tSet">Set</button>
+<div id="bot">
+  <div class="tr">
+    <div class="rb" id="bPrev" title="Pichhla step">⏮</div>
+    <div class="rb big" id="bPlay" title="Play / Stop (Enter)">▶</div>
+    <div class="rb" id="bNext" title="Agla step">⏭</div>
+    <div class="seqtag"><div class="n" id="seqN">1</div><div class="t" id="seqT">Sequence 1</div></div>
+  </div>
+  <div class="cnt">
+    <div class="mini" id="cPlus" title="Step jodo">+</div>
+    <div class="cntv" id="cVal" contenteditable="true" title="Steps ki ginti">1</div>
+    <div class="mini" id="cMinus" title="Aakhri step hatao">−</div>
+  </div>
+  <div class="dirs">
+    <span id="dFwd" title="Forward" class="on">➡</span>
+    <span id="dPing" title="Ping pong">↔</span>
+    <span id="dClr" title="Saare steps khaali karo">✖</span>
   </div>
   <div id="steps"></div>
-</footer>
 </div>
-<div id="drop">XML / backup yahan chhodo</div>
-<div id="modal"><div class="box"><h3>RESOLUME ADVANCED OUTPUT LAYOUT</h3><div id="xmlList"></div>
-  <div class="row" style="margin-top:10px"><button id="xFile">📂 Koi aur .xml file chuno</button><button id="xClose">Band</button></div>
-  <p class="note">Resolume ka current layout: <code>Documents\Resolume Arena\Preferences\AdvancedOutput.xml</code>. Presets: <code>Presets\Advanced Output</code>.</p></div></div>
+
+<div id="modal"><div class="box"><h3>Resolume Advanced Output layout</h3><div id="xmlList"></div>
+  <div style="margin-top:10px"><button class="mbtn" id="xFile">📂 Koi aur .xml chuno</button><button class="mbtn" id="xClose" style="background:#3a4e5b">Band</button></div>
+  <p class="hint" style="padding:8px 0">Resolume ka current layout: Documents\Resolume Arena\Preferences\AdvancedOutput.xml · Presets: Presets\Advanced Output</p></div></div>
+<div id="drop">Resolume XML ya .vjchaser file yahan chhodo</div>
+<div id="tip"></div>
+<input type="file" id="fileXml" accept=".xml" hidden><input type="file" id="fileProj" accept=".vjchaser,.json" hidden>
 
 <script>
-const $=s=>document.querySelector(s);
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const NS='http://www.w3.org/2000/svg';
-let P={comp:[1920,1080],slices:[],seqs:[],src:''};
-let cur=0, stepI=0, clip=null, playing=false, playStep=0, playT=0;
+/* ---------------- model ---------------- */
+let P=null, cur=0, stepI=0, clip=null, playing=false, playStep=0, pingDir=1;
+let FK={ori:'h',fx:false,fy:false,block:1,mod:0,w:1,mx:false,my:false,inv:false};
+function blank(){return{name:'NewChaserDocument',comp:[1920,1080],slices:[],views:[],view:-1,seqs:[{name:'Sequence 1',dir:'fwd',steps:[[]]}],src:''}}
+const seq=()=>P.seqs[cur];
+const steps=()=>seq().steps;
+const step=()=>steps()[stepI]||[];
+function hiddenSet(){if(P.view<0)return new Set(P.slices.map((s,i)=>s.hidden?i:-1).filter(i=>i>=0));const v=P.views[P.view];if(!v)return new Set();const on=new Set(v.slices);return new Set(P.slices.map((_,i)=>i).filter(i=>!on.has(i)))}
+function visible(){const h=hiddenSet();return P.slices.map((_,i)=>i).filter(i=>!h.has(i))}
 
-/* ---------------- persistence ---------------- */
+/* ---------------- save ---------------- */
 let svT=0;
-function status(t,ok){const s=$('#status');s.textContent=t;s.className=ok?'ok':''}
+function status(t,ok){const s=$('#save');s.textContent=t;s.className=ok?'ok':''}
 function save(){clearTimeout(svT);status('saving…');svT=setTimeout(async()=>{
   try{const r=await fetch('/api/save',{method:'POST',body:JSON.stringify(P)});const j=await r.json();
-    if(j.ok){status('✓ Saved – Resolume me live',true);$('#where').innerHTML='Plugin file:<br><code>'+j.path+'</code>'}else status('Save error: '+j.error)}
-  catch(e){status('Editor server band hai? (.exe dobara kholo)')}},300)}
+    if(j.ok){status('✓ Saved · Resolume live',true);$('#eWhere').textContent='Plugin file: '+j.path}else status('Save error: '+j.error)}
+  catch(e){status('⚠ Editor band hai – VJ Chaser Editor dobara kholo')}},250)}
 setInterval(()=>fetch('/api/ping').catch(()=>{}),2000);
 
 /* ---------------- XML import ---------------- */
@@ -150,179 +219,253 @@ function parseXml(txt,src){
   const cs=d.querySelector('CurrentCompositionTextureSize');
   const comp=cs?[+cs.getAttribute('width')||1920,+cs.getAttribute('height')||1080]:[1920,1080];
   const out=[];
-  d.querySelectorAll('Screen').forEach(scr=>{
-    const sName=(scr.querySelector(':scope>Params>Param[name="Name"]')||{}).getAttribute?.('value')||scr.getAttribute('name')||'';
-    scr.querySelectorAll('layers > *').forEach(sl=>{
+  d.querySelectorAll('Screen').forEach((scr,si)=>{
+    const pn=scr.querySelector(':scope>Params>Param[name="Name"]');
+    const sName=(pn&&pn.getAttribute('value'))||scr.getAttribute('name')||('Screen '+(si+1));
+    scr.querySelectorAll(':scope>layers>*').forEach(sl=>{
       const ir=sl.querySelector(':scope>InputRect');if(!ir)return;
       const vs=[...ir.querySelectorAll(':scope>v')].map(v=>[+v.getAttribute('x'),+v.getAttribute('y')]);if(vs.length<4)return;
       const nm=sl.querySelector(':scope>Params>Param[name="Name"]');
-      out.push({name:(nm?nm.getAttribute('value'):'Slice')||'Slice',screen:sName,quad:vs.slice(0,4).flat()});
+      const en=sl.querySelector(':scope>Params>Param[name="Enabled"]');
+      out.push({name:(nm&&nm.getAttribute('value'))||sl.tagName,screen:sName,quad:vs.slice(0,4).flat(),hidden:!!(en&&en.getAttribute('value')==='0')});
     });
   });
-  if(!out.length){alert('Is XML me koi slice nahi mila.');return}
-  const old=P.slices.length;
+  if(!out.length){alert('Is XML me koi slice nahi mila.');return false}
+  const old=P&&P.slices.length;
+  if(!P)P=blank();
+  // keep sequences by slice name if possible
+  const oldNames=(P.slices||[]).map(s=>s.screen+'|'+s.name);const map={};out.forEach((s,i)=>map[s.screen+'|'+s.name]=i);
+  P.seqs.forEach(sq=>sq.steps=sq.steps.map(st=>st.map(i=>map[oldNames[i]]).filter(i=>i!==undefined)));
+  P.views.forEach(v=>v.slices=v.slices.map(i=>map[oldNames[i]]).filter(i=>i!==undefined));
   P.comp=comp;P.slices=out;P.src=src||'';
-  if(!P.seqs.length)P.seqs=[{name:'Left → Right',steps:gen('lr',1)}];
-  P.seqs.forEach(s=>s.steps=s.steps.map(st=>st.filter(i=>i<out.length)));
-  if(old&&old!==out.length)alert(`Layout badla: pehle ${old} slices the, ab ${out.length}. Purane patterns check kar lo.`);
   status(`${out.length} slices · ${comp[0]}×${comp[1]}`,true);
-  draw();save();
+  build();fit();save();return true;
 }
-async function openXmlModal(){
+async function openRelink(){
   const list=await fetch('/api/xmllist').then(r=>r.json()).catch(()=>[]);
-  const box=$('#xmlList');box.innerHTML=list.length?'':'<p class="note">Resolume ka layout file apne aap nahi mila. Neeche button se .xml chuno.</p>';
-  list.forEach(p=>{const d=document.createElement('div');d.className='xmli';d.textContent=p;
+  const box=$('#xmlList');box.innerHTML=list.length?'':'<p class="hint">Resolume ka layout apne aap nahi mila. Neeche button se .xml chuno.</p>';
+  list.forEach(p=>{const d=document.createElement('div');d.className='xi';d.textContent=p;
     d.onclick=async()=>{const t=await fetch('/api/xml?path='+encodeURIComponent(p)).then(r=>r.text());parseXml(t,p);$('#modal').style.display='none'};box.appendChild(d)});
-  $('#modal').style.display='flex';
+  $('#modal').style.display='flex';closeFly();
 }
-$('#bXml').onclick=openXmlModal;$('#xClose').onclick=()=>$('#modal').style.display='none';
-$('#xFile').onclick=()=>$('#fileXml').click();
-$('#fileXml').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{parseXml(t,f.name);$('#modal').style.display='none'});e.target.value=''};
 
-/* ---------------- geometry helpers ---------------- */
-function centers(){return P.slices.map((s,i)=>{const q=s.quad;const xs=[q[0],q[2],q[4],q[6]],ys=[q[1],q[3],q[5],q[7]];
-  return{i,x:(Math.min(...xs)+Math.max(...xs))/2,y:(Math.min(...ys)+Math.max(...ys))/2,w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)}})}
-function median(a){const b=[...a].sort((x,y)=>x-y);return b.length?b[Math.floor(b.length/2)]:1}
-function groupBy(key,tol){const c=centers().sort((a,b)=>a[key]-b[key]);const g=[];
-  c.forEach(o=>{const last=g[g.length-1];if(last&&Math.abs(o[key]-last.k)<=tol){last.m.push(o.i)}else g.push({k:o[key],m:[o.i]})});return g.map(x=>x.m)}
-function cols(){const c=centers();return groupBy('x',median(c.map(o=>o.w))*0.45)}
-function rows(){const c=centers();return groupBy('y',median(c.map(o=>o.h))*0.45)}
-function widen(groups,w){if(w<=1)return groups.map(g=>[...g]);const n=groups.length;
-  return groups.map((_,i)=>{const s=new Set();for(let k=0;k<w;k++)groups[(i+k)%n].forEach(x=>s.add(x));return[...s]})}
+/* ---------------- geometry ---------------- */
+function ctr(i){const q=P.slices[i].quad;const xs=[q[0],q[2],q[4],q[6]],ys=[q[1],q[3],q[5],q[7]];
+  return{i,x:(Math.min(...xs)+Math.max(...xs))/2,y:(Math.min(...ys)+Math.max(...ys))/2,w:Math.max(...xs)-Math.min(...xs),h:Math.max(...ys)-Math.min(...ys)}}
+const median=a=>{const b=[...a].sort((x,y)=>x-y);return b.length?b[b.length>>1]:1};
+function cluster(items,key,tol){items.sort((a,b)=>a.k-b.k);const g=[];items.forEach(o=>{const l=g[g.length-1];if(l&&Math.abs(o.k-l.last)<=tol){l.m.push(o.i);l.last=o.k}else g.push({last:o.k,m:[o.i]})});return g.map(x=>x.m)}
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-function gen(type,w){
-  const n=P.slices.length,all=[...Array(n).keys()];if(!n)return[[]];
-  const W=Math.max(1,w|0),cnt=Math.max(1,+$('#gCount')?.value||16);
-  const c=centers();
-  switch(type){
-    case'lr':return widen(cols(),W);
-    case'rl':return widen(cols().reverse(),W);
-    case'tb':return widen(rows(),W);
-    case'bt':return widen(rows().reverse(),W);
-    case'pingx':{const g=cols();const pp=g.concat(g.slice(1,-1).reverse());return widen(pp,W)}
-    case'center':case'outside':{const cx=P.comp[0]/2,cy=P.comp[1]/2;const d=c.map(o=>({i:o.i,d:Math.hypot((o.x-cx)/P.comp[0],(o.y-cy)/P.comp[1])}));
-      const mx=Math.max(...d.map(o=>o.d))||1;const R=Math.max(3,Math.min(12,Math.round(Math.sqrt(n))));const g=[...Array(R)].map(()=>[]);
-      d.forEach(o=>g[Math.min(R-1,Math.floor(o.d/mx*R*0.999))].push(o.i));const gg=g.filter(x=>x.length);return widen(type==='center'?gg:gg.reverse(),W)}
-    case'diag':{const sx=P.comp[0],sy=P.comp[1];const v=c.map(o=>({i:o.i,k:o.x/sx+o.y/sy}));const tol=median(c.map(o=>o.w/sx+o.h/sy))*0.45;
-      v.sort((a,b)=>a.k-b.k);const g=[];v.forEach(o=>{const l=g[g.length-1];if(l&&Math.abs(o.k-l.k)<=tol)l.m.push(o.i);else g.push({k:o.k,m:[o.i]})});return widen(g.map(x=>x.m),W)}
-    case'snake':{const out=[];rows().forEach((r,ri)=>{const s=r.map(i=>c[i]).sort((a,b)=>ri%2?b.x-a.x:a.x-b.x);s.forEach(o=>out.push([o.i]))});return widen(out,W)}
-    case'one':return widen(all.map(i=>[i]),W);
-    case'rand1':return[...Array(cnt)].map(()=>shuffle([...all]).slice(0,W));
-    case'randhalf':return[...Array(cnt)].map(()=>shuffle([...all]).slice(0,Math.max(1,Math.round(n/2))));
-    case'alt':{const order=cols().flat();const a=order.filter((_,k)=>k%2===0),b=order.filter((_,k)=>k%2===1);return[a,b]}
-    case'flash':return[[...all],[]];
-    case'fill':{const g=cols();const out=[];let acc=[];g.forEach(x=>{acc=acc.concat(x);out.push([...acc])});return out}
+
+/* ---------------- factory ---------------- */
+function factoryGroups(){
+  const vis=visible();if(!vis.length)return[];
+  const c=vis.map(ctr);const W=P.comp[0],H=P.comp[1];
+  const mw=median(c.map(o=>o.w)),mh=median(c.map(o=>o.h));
+  let fx=FK.fx,fy=FK.fy;
+  const X=o=>fx?W-o.x:o.x, Y=o=>fy?H-o.y:o.y;
+  let g;
+  switch(FK.ori){
+    case'h':g=cluster(c.map(o=>({i:o.i,k:X(o)})),'x',mw*0.45);break;
+    case'v':g=cluster(c.map(o=>({i:o.i,k:Y(o)})),'y',mh*0.45);break;
+    case'd1':g=cluster(c.map(o=>({i:o.i,k:X(o)/mw+Y(o)/mh})),'d',0.6);break;
+    case'd2':g=cluster(c.map(o=>({i:o.i,k:(W-X(o))/mw+Y(o)/mh})),'d',0.6);break;
+    case'r':{const cx=W/2,cy=H/2;const d=c.map(o=>({i:o.i,k:Math.hypot((o.x-cx)/mw,(o.y-cy)/mh)}));g=cluster(d,'r',0.75);if(fx||fy)g.reverse();break}
+    case'i':g=vis.map(i=>[i]);if(fx)g.reverse();break;
+    case's':{const rows=cluster(c.map(o=>({i:o.i,k:Y(o)})),'y',mh*0.45);g=[];rows.forEach(r=>r.map(ctr).sort((a,b)=>X(a)-X(b)).forEach(o=>g.push([o.i])));break}
+    case'rnd':g=shuffle([...vis]).map(i=>[i]);break;
+    case'all':g=[[...vis]];break;
   }
-  return[[]];
+  // mirror: fold groups symmetrically
+  const mir=(FK.ori==='h'&&FK.mx)||(FK.ori==='v'&&FK.my)||((FK.ori==='d1'||FK.ori==='d2'||FK.ori==='i'||FK.ori==='s')&&(FK.mx||FK.my));
+  if(mir&&g.length>1){const n=g.length,h=Math.ceil(n/2),out=[];for(let k=0;k<h;k++){const s=new Set([...g[k],...g[n-1-k]]);out.push([...s])}g=out}
+  return g;
 }
+function runFactory(){
+  if(!P.slices.length)return;
+  let g=factoryGroups();if(!g.length)return;
+  const vis=visible();
+  if(FK.ori==='all'){seq().steps=[[...vis],[]];return finishFactory()}
+  // block: B consecutive groups per step
+  const B=Math.max(1,FK.block);let blocks=[];for(let k=0;k<g.length;k+=B)blocks.push(g.slice(k,k+B).flat());
+  let st;
+  if(FK.mod>1){st=[...Array(FK.mod)].map((_,m)=>blocks.filter((_,k)=>k%FK.mod===m).flat())}
+  else st=blocks;
+  // width / trail
+  if(FK.w>1){const n=st.length;st=st.map((_,i)=>{const s=new Set();for(let k=0;k<FK.w;k++)st[(i-k+n)%n].forEach(x=>s.add(x));return[...s]})}
+  if(FK.inv){const all=new Set(vis);st=st.map(s=>{const on=new Set(s);return[...all].filter(i=>!on.has(i))})}
+  seq().steps=st.map(s=>[...new Set(s)].sort((a,b)=>a-b));
+  finishFactory();
+}
+function finishFactory(){stepI=0;playStep=0;renderSteps();paint();save();renderFactory()}
+function renderFactory(){$('#fkOri').value=FK.ori;$('#fkFX').classList.toggle('on',FK.fx);$('#fkFY').classList.toggle('on',FK.fy);
+  $('#fkBlockV').textContent=FK.block;$('#fkModV').textContent=FK.mod>1?FK.mod:'OFF';$('#fkWV').textContent=FK.w;
+  $('#fkMX').classList.toggle('on',FK.mx);$('#fkMY').classList.toggle('on',FK.my);$('#fkInv').classList.toggle('on',FK.inv)}
+$('#fkOri').onchange=e=>{FK.ori=e.target.value;runFactory()};
+$('#fkFX').onclick=()=>{FK.fx=!FK.fx;runFactory()};$('#fkFY').onclick=()=>{FK.fy=!FK.fy;runFactory()};
+$('#fkBm').onclick=()=>{FK.block=Math.max(1,FK.block-1);runFactory()};$('#fkBp').onclick=()=>{FK.block=Math.min(64,FK.block+1);runFactory()};
+$('#fkMm').onclick=()=>{FK.mod=FK.mod<=2?0:FK.mod-1;runFactory()};$('#fkMp').onclick=()=>{FK.mod=FK.mod<2?2:Math.min(32,FK.mod+1);runFactory()};
+$('#fkWm').onclick=()=>{FK.w=Math.max(1,FK.w-1);runFactory()};$('#fkWp').onclick=()=>{FK.w=Math.min(32,FK.w+1);runFactory()};
+$('#fkMX').onclick=()=>{FK.mx=!FK.mx;runFactory()};$('#fkMY').onclick=()=>{FK.my=!FK.my;runFactory()};
+$('#fkInv').onclick=()=>{FK.inv=!FK.inv;runFactory()};
+$('#fkSh').onclick=()=>{if(!seq())return;seq().steps=shuffle([...steps()]);finishFactory()};
+$('#fkReset').onclick=()=>{FK={ori:'h',fx:false,fy:false,block:1,mod:0,w:1,mx:false,my:false,inv:false};runFactory()};
 
-/* ---------------- drawing ---------------- */
-let polys=[];
-function draw(){
-  const st=$('#stage');st.innerHTML='';polys=[];
-  const svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox',`0 0 ${P.comp[0]} ${P.comp[1]}`);
-  const fs=Math.max(10,Math.min(P.comp[0],P.comp[1])/45);
+/* ---------------- canvas build / zoom / pan ---------------- */
+let Z={s:1,x:0,y:0},polys=[];
+function build(){
+  const w=$('#world');w.innerHTML='';polys=[];
+  const svg=document.createElementNS(NS,'svg');svg.setAttribute('width',P.comp[0]);svg.setAttribute('height',P.comp[1]);
+  const r=document.createElementNS(NS,'rect');r.setAttribute('width',P.comp[0]);r.setAttribute('height',P.comp[1]);r.setAttribute('class','comp');svg.appendChild(r);
+  const fs=Math.max(10,Math.min(P.comp[0],P.comp[1])/60);
   P.slices.forEach((s,i)=>{const q=s.quad;const p=document.createElementNS(NS,'polygon');
-    p.setAttribute('points',`${q[0]},${q[1]} ${q[2]},${q[3]} ${q[4]},${q[5]} ${q[6]},${q[7]}`);p.setAttribute('class','sl');
-    p.setAttribute('stroke-width',Math.max(1,fs/8));p.dataset.i=i;svg.appendChild(p);polys.push(p);
-    const t=document.createElementNS(NS,'text');const c=[(q[0]+q[4])/2,(q[1]+q[5])/2];t.setAttribute('x',c[0]);t.setAttribute('y',c[1]+fs/3);
-    t.setAttribute('text-anchor','middle');t.setAttribute('font-size',fs);t.setAttribute('class','lbl');t.textContent=i+1;svg.appendChild(t)});
-  st.appendChild(svg);paint();bindPaint(svg);renderSeqs();renderSteps();
+    p.setAttribute('points',`${q[0]},${q[1]} ${q[2]},${q[3]} ${q[4]},${q[5]} ${q[6]},${q[7]}`);p.setAttribute('class','sl');p.setAttribute('stroke-width',Math.max(1.5,fs/7));p.dataset.i=i;
+    svg.appendChild(p);polys.push(p);
+    const t=document.createElementNS(NS,'text');const c=ctr(i);t.setAttribute('x',c.x);t.setAttribute('y',c.y+fs/3);t.setAttribute('text-anchor','middle');
+    t.setAttribute('font-size',Math.min(fs,c.h*0.5,c.w/Math.max(4,s.name.length)*1.8));t.setAttribute('class','tl');t.textContent=s.name;svg.appendChild(t)});
+  w.appendChild(svg);bindCanvas(svg);applyHidden();paint();renderSeqs();renderViews();renderSteps();
+  $('#doc').textContent=P.name||'NewChaserDocument';
 }
-function seq(){return P.seqs[cur]}
-function step(){return seq()?seq().steps[stepI]||[]:[]}
-function paint(){const on=new Set(playing?(seq()?.steps[playStep]||[]):step());polys.forEach((p,i)=>{p.classList.toggle('on',!playing&&on.has(i));p.classList.toggle('play',playing&&on.has(i))})}
-function bindPaint(svg){let mode=null;const seen=new Set();
-  const hit=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);return el&&el.dataset&&el.dataset.i!==undefined?+el.dataset.i:null};
-  svg.addEventListener('pointerdown',e=>{if(playing||!seq())return;const i=hit(e);if(i===null)return;svg.setPointerCapture(e.pointerId);
-    const s=new Set(step());mode=!s.has(i);seen.clear();apply(i)});
-  svg.addEventListener('pointermove',e=>{if(mode===null)return;const i=hit(e);if(i!==null&&!seen.has(i))apply(i)});
-  const end=()=>{if(mode!==null){mode=null;save();renderSteps();renderSeqs()}};svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
-  function apply(i){seen.add(i);const s=new Set(step());mode?s.add(i):s.delete(i);seq().steps[stepI]=[...s].sort((a,b)=>a-b);paint()}
+function applyZ(){$('#world').style.transform=`translate(${Z.x}px,${Z.y}px) scale(${Z.s})`;$('#zv').textContent=Math.round(Z.s*100)+'%'}
+function fit(){const v=$('#view').getBoundingClientRect();const s=Math.min((v.width-80)/P.comp[0],(v.height-60)/P.comp[1]);Z.s=s;Z.x=(v.width-P.comp[0]*s)/2;Z.y=(v.height-P.comp[1]*s)/2;applyZ()}
+$('#fit').onclick=fit;$('#zoomPill').onclick=fit;
+$('#lbl').onclick=()=>{$('#view').classList.toggle('labels');$('#lbl').classList.toggle('on')};
+$('#view').addEventListener('wheel',e=>{e.preventDefault();const r=$('#view').getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;
+  const k=Math.exp(-e.deltaY*0.0015);const ns=Math.min(8,Math.max(0.02,Z.s*k));Z.x=mx-(mx-Z.x)*ns/Z.s;Z.y=my-(my-Z.y)*ns/Z.s;Z.s=ns;applyZ()},{passive:false});
+let panMode=false,spaceDown=false;
+$('#hand').onclick=()=>{panMode=!panMode;$('#hand').classList.toggle('on',panMode);$('#view').classList.toggle('pan',panMode)};
+(function(){let pan=null;const v=$('#view');
+  v.addEventListener('pointerdown',e=>{if(panMode||spaceDown||e.button===1){pan={x:e.clientX,y:e.clientY,ox:Z.x,oy:Z.y};v.setPointerCapture(e.pointerId);v.classList.add('panning');e.stopPropagation()}},true);
+  v.addEventListener('pointermove',e=>{if(pan){Z.x=pan.ox+e.clientX-pan.x;Z.y=pan.oy+e.clientY-pan.y;applyZ()}});
+  v.addEventListener('pointerup',()=>{pan=null;v.classList.remove('panning')});})();
+function applyHidden(){const h=hiddenSet();polys.forEach((p,i)=>{p.classList.toggle('hid',h.has(i));p.nextSibling.style.display=h.has(i)?'none':''})}
+function paint(){const on=new Set(playing?(steps()[playStep]||[]):step());polys.forEach((p,i)=>{p.classList.toggle('on',!playing&&on.has(i));p.classList.toggle('flash',playing&&on.has(i))})}
+function bindCanvas(svg){let mode=null;const seen=new Set();const tip=$('#tip');
+  const hit=e=>{const el=document.elementFromPoint(e.clientX,e.clientY);return el&&el.classList&&el.classList.contains('sl')?+el.dataset.i:null};
+  svg.addEventListener('pointerdown',e=>{if(panMode||spaceDown||e.button!==0||playing)return;const i=hit(e);if(i===null)return;svg.setPointerCapture(e.pointerId);
+    mode=!new Set(step()).has(i);seen.clear();apply(i)});
+  svg.addEventListener('pointermove',e=>{const i=hit(e);
+    if(i!==null){tip.style.display='block';tip.style.left=e.clientX+12+'px';tip.style.top=e.clientY+12+'px';tip.textContent=`${P.slices[i].name}  ·  ${P.slices[i].screen}`}else tip.style.display='none';
+    if(mode!==null&&i!==null&&!seen.has(i))apply(i)});
+  svg.addEventListener('pointerleave',()=>tip.style.display='none');
+  const end=()=>{if(mode!==null){mode=null;save();renderSteps()}};svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
+  function apply(i){seen.add(i);const s=new Set(step());mode?s.add(i):s.delete(i);steps()[stepI]=[...s].sort((a,b)=>a-b);paint();renderStepCell(stepI)}
 }
-function renderSeqs(){const b=$('#seqs');b.innerHTML='';
-  P.seqs.forEach((s,i)=>{const d=document.createElement('div');d.className='seq'+(i===cur?' sel':'');
-    d.innerHTML=`<div class="n">${i+1}</div><div class="t"></div><div class="c">${s.steps.length}</div>`;d.querySelector('.t').textContent=s.name||'Sequence';
-    d.onclick=()=>{cur=i;stepI=0;playStep=0;draw()};b.appendChild(d)});
-  $('#sName').value=seq()?.name||'';}
-function mini(cv,st){const g=cv.getContext('2d');const W=cv.width,H=cv.height;g.fillStyle='#000';g.fillRect(0,0,W,H);
-  const sx=W/P.comp[0],sy=H/P.comp[1];const on=new Set(st);P.slices.forEach((s,i)=>{const q=s.quad;g.fillStyle=on.has(i)?'#18e0ff':'#22223a';
-    g.beginPath();g.moveTo(q[0]*sx,q[1]*sy);for(let k=1;k<4;k++)g.lineTo(q[k*2]*sx,q[k*2+1]*sy);g.closePath();g.fill()})}
-function renderSteps(){const b=$('#steps');b.innerHTML='';const s=seq();if(!s){$('#stepTitle').textContent='—';return}
-  if(stepI>=s.steps.length)stepI=Math.max(0,s.steps.length-1);
-  s.steps.forEach((st,i)=>{const d=document.createElement('div');d.className='st'+(i===stepI?' sel':'')+(playing&&i===playStep?' play':'');
-    const cv=document.createElement('canvas');cv.width=88;cv.height=Math.max(10,Math.round(88*P.comp[1]/P.comp[0]));mini(cv,st);
-    d.innerHTML=`<b>${i+1}</b>`;d.appendChild(cv);const sm=document.createElement('small');sm.textContent=st.length+' on';d.appendChild(sm);
-    d.onclick=()=>{stepI=i;paint();renderSteps()};b.appendChild(d)});
-  $('#stepTitle').textContent=`Step ${stepI+1} / ${s.steps.length}`;$('#tCount').value=s.steps.length;
-  const sel=b.children[stepI];if(sel)sel.scrollIntoView({block:'nearest',inline:'nearest'});}
 
-/* ---------------- sequence ops ---------------- */
-$('#sAdd').onclick=()=>{P.seqs.push({name:'Sequence '+(P.seqs.length+1),steps:[[]]});cur=P.seqs.length-1;stepI=0;draw();save()};
-$('#sDup').onclick=()=>{if(!seq())return;const c=JSON.parse(JSON.stringify(seq()));c.name+=' copy';P.seqs.splice(cur+1,0,c);cur++;draw();save()};
-$('#sDel').onclick=()=>{if(!seq()||!confirm(`"${seq().name}" delete karein?`))return;P.seqs.splice(cur,1);cur=Math.max(0,cur-1);draw();save()};
-$('#sUp').onclick=()=>{if(cur<1)return;[P.seqs[cur-1],P.seqs[cur]]=[P.seqs[cur],P.seqs[cur-1]];cur--;draw();save()};
-$('#sDown').onclick=()=>{if(cur>=P.seqs.length-1)return;[P.seqs[cur+1],P.seqs[cur]]=[P.seqs[cur],P.seqs[cur+1]];cur++;draw();save()};
-$('#sName').oninput=e=>{if(seq()){seq().name=e.target.value;renderSeqs();$('#sName').focus();save()}};
+/* ---------------- side menu / flyouts ---------------- */
+let openM=null;
+function closeFly(){$$('.fly').forEach(f=>f.classList.remove('open'));$$('.mi').forEach(m=>m.classList.remove('sel'));openM=null}
+$$('.mi').forEach(m=>m.onclick=()=>{const k=m.dataset.m;if(openM===k)return closeFly();closeFly();openM=k;m.classList.add('sel');$('#f-'+k).classList.add('open');
+  if(k==='views')renderViews();if(k==='seqs')renderSeqs();if(k==='fact')renderFactory()});
+$('#view').addEventListener('pointerdown',()=>{if(openM&&openM!=='fact'&&openM!=='views')closeFly()});
 
-/* ---------------- step ops ---------------- */
-const S=()=>seq().steps;
-$('#tAdd').onclick=()=>{if(!seq())return;S().splice(stepI+1,0,[]);stepI++;renderSteps();paint();save()};
-$('#tDup').onclick=()=>{if(!seq())return;S().splice(stepI+1,0,[...step()]);stepI++;renderSteps();paint();save()};
-$('#tDel').onclick=()=>{if(!seq()||S().length<2)return;S().splice(stepI,1);stepI=Math.max(0,stepI-1);renderSteps();paint();save()};
-$('#tAll').onclick=()=>{if(!seq())return;S()[stepI]=P.slices.map((_,i)=>i);paint();renderSteps();save()};
-$('#tNone').onclick=()=>{if(!seq())return;S()[stepI]=[];paint();renderSteps();save()};
-$('#tInv').onclick=()=>{if(!seq())return;const s=new Set(step());S()[stepI]=P.slices.map((_,i)=>i).filter(i=>!s.has(i));paint();renderSteps();save()};
-$('#tCopy').onclick=()=>{clip=[...step()];status('Step copy hua')};
-$('#tPaste').onclick=()=>{if(!seq()||!clip)return;S()[stepI]=[...clip];paint();renderSteps();save()};
-$('#tL').onclick=()=>{if(stepI<1)return;const a=S();[a[stepI-1],a[stepI]]=[a[stepI],a[stepI-1]];stepI--;renderSteps();save()};
-$('#tR').onclick=()=>{const a=S();if(stepI>=a.length-1)return;[a[stepI+1],a[stepI]]=[a[stepI],a[stepI+1]];stepI++;renderSteps();save()};
-$('#tSet').onclick=()=>{if(!seq())return;const n=Math.max(1,Math.min(512,+$('#tCount').value||1));const a=S();while(a.length<n)a.push([]);a.length=n;renderSteps();paint();save()};
-$('#gGo').onclick=()=>{if(!seq())return;seq().steps=gen($('#gType').value,+$('#gWidth').value);
-  if(/^Sequence \d+$/.test(seq().name)||!seq().name)seq().name=$('#gType').selectedOptions[0].textContent;stepI=0;draw();save()};
-$('#gAdd').onclick=()=>{if(!seq())return;seq().steps=seq().steps.filter(s=>s.length||seq().steps.length>1).concat(gen($('#gType').value,+$('#gWidth').value));renderSteps();save()};
+/* views */
+function renderViews(){const L=$('#viewsList');L.innerHTML='';
+  const head=(name,idx)=>{const d=document.createElement('div');d.className='fi'+(P.view===idx?' sel':'');d.innerHTML=`<span class="nm"></span><span class="sp"></span>`;d.querySelector('.nm').textContent=name;
+    if(idx>=0){const x=document.createElement('span');x.className='ob';x.textContent='✕';x.title='View hatao';x.onclick=e=>{e.stopPropagation();P.views.splice(idx,1);if(P.view>=P.views.length)P.view=-1;applyHidden();renderViews();save()};d.appendChild(x)}
+    d.onclick=()=>{P.view=idx;applyHidden();renderViews();save()};L.appendChild(d)};
+  head('All',-1);P.views.forEach((v,i)=>head(v.name,i));
+  if(P.view>=0)return;
+  // screens tree with eye toggles
+  const screens=[...new Set(P.slices.map(s=>s.screen))];
+  screens.forEach(sc=>{const idx=P.slices.map((s,i)=>s.screen===sc?i:-1).filter(i=>i>=0);
+    const g=document.createElement('div');g.className='fi grp';const allOn=idx.every(i=>!P.slices[i].hidden);
+    g.innerHTML=`<span class="eye ${allOn?'':'off'}">👁</span><span class="nm"></span><span class="sp"></span><small>${idx.length}</small>`;g.querySelector('.nm').textContent=sc;
+    g.querySelector('.eye').onclick=e=>{e.stopPropagation();idx.forEach(i=>P.slices[i].hidden=allOn);applyHidden();renderViews();save()};L.appendChild(g);
+    idx.forEach(i=>{const s=P.slices[i];const d=document.createElement('div');d.className='fi sl-i';
+      d.innerHTML=`<span class="eye ${s.hidden?'off':''}">👁</span><span class="nm"></span>`;d.querySelector('.nm').textContent=s.name;
+      d.querySelector('.eye').onclick=e=>{e.stopPropagation();s.hidden=!s.hidden;applyHidden();renderViews();save()};
+      d.onmouseenter=()=>polys[i]&&polys[i].classList.add('hl');d.onmouseleave=()=>polys[i]&&polys[i].classList.remove('hl');
+      d.onclick=()=>{const st=new Set(step());st.has(i)?st.delete(i):st.add(i);steps()[stepI]=[...st].sort((a,b)=>a-b);paint();renderStepCell(stepI);save()};
+      L.appendChild(d)})});
+}
+$('#vAdd').onclick=()=>{const n=prompt('View ka naam? (abhi dikh rahe slices is view me jayenge)','View '+(P.views.length+1));if(!n)return;
+  P.views.push({name:n,slices:visible()});P.view=P.views.length-1;applyHidden();renderViews();save()};
+
+/* sequences */
+function renderSeqs(){const L=$('#seqList');L.innerHTML='';
+  P.seqs.forEach((s,i)=>{const d=document.createElement('div');d.className='fi'+(i===cur?' sel':'');d.draggable=true;
+    d.innerHTML=`<small>${i+1}</small><span class="nm"></span><span class="sp"></span><span class="ob" title="Naam badlo">✎</span><span class="ob" title="Copy">⧉</span><span class="ob" title="Delete">✕</span>`;
+    d.querySelector('.nm').textContent=s.name;const b=d.querySelectorAll('.ob');
+    b[0].onclick=e=>{e.stopPropagation();const n=prompt('Sequence ka naam',s.name);if(n){s.name=n;renderSeqs();renderTag();save()}};
+    b[1].onclick=e=>{e.stopPropagation();const c=JSON.parse(JSON.stringify(s));c.name+=' copy';P.seqs.splice(i+1,0,c);renderSeqs();save()};
+    b[2].onclick=e=>{e.stopPropagation();if(P.seqs.length<2)return alert('Kam se kam ek sequence chahiye');if(!confirm(`"${s.name}" delete karein?`))return;P.seqs.splice(i,1);cur=Math.min(cur,P.seqs.length-1);stepI=0;renderSeqs();renderSteps();paint();save()};
+    d.onclick=()=>{cur=i;stepI=0;playStep=0;renderSeqs();renderSteps();paint()};
+    d.ondragstart=e=>e.dataTransfer.setData('text/seq',i);d.ondragover=e=>e.preventDefault();
+    d.ondrop=e=>{e.preventDefault();const from=+e.dataTransfer.getData('text/seq');if(isNaN(from)||from===i)return;const [m]=P.seqs.splice(from,1);P.seqs.splice(i,0,m);cur=i;renderSeqs();renderTag();save()};
+    L.appendChild(d)});renderTag()}
+function renderTag(){$('#seqN').textContent=cur+1;$('#seqT').textContent=seq().name;$('#dFwd').classList.toggle('on',(seq().dir||'fwd')==='fwd');$('#dPing').classList.toggle('on',seq().dir==='ping')}
+$('#sAdd').onclick=()=>{P.seqs.push({name:'Sequence '+(P.seqs.length+1),dir:'fwd',steps:[[]]});cur=P.seqs.length-1;stepI=0;renderSeqs();renderSteps();paint();save()};
+$('#seqT').onclick=()=>{const n=prompt('Sequence ka naam',seq().name);if(n){seq().name=n;renderSeqs();save()}};
+
+/* ---------------- steps strip ---------------- */
+function miniDraw(cv,st){const g=cv.getContext('2d');const W=cv.width,H=cv.height;g.clearRect(0,0,W,H);const sx=W/P.comp[0],sy=H/P.comp[1];const on=new Set(st);
+  g.fillStyle='#ffffff';P.slices.forEach((s,i)=>{if(!on.has(i))return;const q=s.quad;g.beginPath();g.moveTo(q[0]*sx,q[1]*sy);for(let k=1;k<4;k++)g.lineTo(q[k*2]*sx,q[k*2+1]*sy);g.closePath();g.fill()})}
+function renderStepCell(i){const d=$('#steps').children[i];if(!d)return;const st=steps()[i]||[];d.className='st'+(st.length?' has':'')+(i===stepI?' cur':'')+(i===stepI&&!st.length?' empty':'')+(playing&&i===playStep?' play':'');
+  miniDraw(d.querySelector('canvas'),st)}
+function renderSteps(){const b=$('#steps');b.innerHTML='';if(stepI>=steps().length)stepI=steps().length-1;
+  steps().forEach((st,i)=>{const d=document.createElement('div');const cv=document.createElement('canvas');cv.width=64;cv.height=Math.max(8,Math.round(64*P.comp[1]/P.comp[0]));
+    d.appendChild(cv);const t=document.createElement('b');t.textContent=i+1;d.appendChild(t);d.onclick=()=>{stepI=i;if(playing)setPlay(false);renderSteps();paint()};b.appendChild(d);renderStepCell(i)});
+  $('#cVal').textContent=steps().length;renderTag();const c=b.children[stepI];if(c)c.scrollIntoView({block:'nearest',inline:'nearest'})}
+$('#cPlus').onclick=()=>{steps().splice(stepI+1,0,[]);stepI++;renderSteps();paint();save()};
+$('#cMinus').onclick=()=>{if(steps().length<2)return;steps().pop();renderSteps();paint();save()};
+$('#cVal').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur()}});
+$('#cVal').addEventListener('blur',e=>{const n=Math.max(1,Math.min(512,parseInt(e.target.textContent)||1));const a=steps();while(a.length<n)a.push([]);a.length=n;renderSteps();paint();save()});
+$('#dFwd').onclick=()=>{seq().dir='fwd';renderTag();save()};$('#dPing').onclick=()=>{seq().dir='ping';renderTag();save()};
+$('#dClr').onclick=()=>{if(!confirm('Is sequence ke saare steps khaali karein?'))return;seq().steps=seq().steps.map(()=>[]);renderSteps();paint();save()};
+$('#bPrev').onclick=()=>{stepI=(stepI-1+steps().length)%steps().length;renderSteps();paint()};
+$('#bNext').onclick=()=>{stepI=(stepI+1)%steps().length;renderSteps();paint()};
 
 /* ---------------- preview ---------------- */
-let raf=0,last=0,acc=0;
-function tick(t){if(!playing)return;if(!last)last=t;acc+=(t-last)/1000;last=t;
-  const sec=60/Math.max(20,+$('#bpm').value||128)*(+$('#slen').value);
-  if(acc>=sec){acc%=sec;playStep=(playStep+1)%Math.max(1,seq()?.steps.length||1);paint();
-    [...$('#steps').children].forEach((d,i)=>d.classList.toggle('play',i===playStep))}
+let raf=0,last=0,acc=0;const BPM=()=>128;
+function tick(t){if(!playing)return;if(!last)last=t;acc+=(t-last)/1000;last=t;const sec=60/BPM();
+  if(acc>=sec){acc%=sec;const n=steps().length;const prev=playStep;
+    if(seq().dir==='ping'&&n>1){playStep+=pingDir;if(playStep>=n){playStep=n-2;pingDir=-1}if(playStep<0){playStep=1;pingDir=1}}else playStep=(playStep+1)%n;
+    paint();renderStepCell(prev);renderStepCell(playStep)}
   raf=requestAnimationFrame(tick)}
-function setPlay(on){playing=on;$('#bPlay').classList.toggle('on',on);$('#bPlay').textContent=on?'■ Stop':'▶ Preview';
-  playStep=0;acc=0;last=0;paint();renderSteps();if(on)raf=requestAnimationFrame(tick)}
+function setPlay(on){playing=on;$('#bPlay').textContent=on?'■':'▶';$('#bPlay').classList.toggle('on',on);playStep=stepI;pingDir=1;acc=0;last=0;paint();renderSteps();if(on)raf=requestAnimationFrame(tick)}
 $('#bPlay').onclick=()=>setPlay(!playing);
 
-/* ---------------- backup ---------------- */
-$('#pExp').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(P,null,1)],{type:'application/json'}));
-  a.download='vjchaser-project.json';a.click()};
-$('#pImp').onclick=()=>$('#fileProj').click();
-$('#fileProj').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const o=JSON.parse(t);if(!o.slices||!o.seqs)throw 0;P=o;cur=0;stepI=0;draw();save()}catch(x){alert('Ye VJ Chaser backup nahi hai')}});e.target.value=''};
+/* ---------------- file / export ---------------- */
+$('#doc').addEventListener('input',()=>{P.name=$('#doc').textContent.trim()||'NewChaserDocument';save()});
+$('#doc').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur()}});
+$('#fNew').onclick=()=>{if(!confirm('Naya document? (Resolume layout wahi rahega, sequences khaali)'))return;const sl=P.slices,c=P.comp,src=P.src;P=blank();P.slices=sl;P.comp=c;P.src=src;cur=0;stepI=0;build();fit();save();closeFly()};
+$('#fLoad').onclick=()=>{$('#fileProj').click();closeFly()};
+$('#fSave').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(P,null,1)],{type:'application/json'}));a.download=(P.name||'chaser')+'.vjchaser';a.click();closeFly()};
+$('#fRelink').onclick=openRelink;$('#xClose').onclick=()=>$('#modal').style.display='none';$('#xFile').onclick=()=>$('#fileXml').click();
+$('#fileXml').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(t=>{if(parseXml(t,f.name))$('#modal').style.display='none'});e.target.value=''};
+$('#fileProj').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(loadProj);e.target.value=''};
+function loadProj(t){try{const o=JSON.parse(t);if(!o.slices||!o.seqs)throw 0;P=Object.assign(blank(),o);cur=0;stepI=0;build();fit();save()}catch(x){alert('Ye VJ Chaser file nahi hai')}}
+$('#eInput').onclick=()=>{const W=P.comp[0],H=P.comp[1];const cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d');g.fillStyle='#000';g.fillRect(0,0,W,H);
+  const fs=Math.max(12,Math.min(W,H)/50);g.font=`700 ${fs}px Segoe UI`;g.textAlign='center';g.textBaseline='middle';
+  P.slices.forEach((s,i)=>{const q=s.quad;g.beginPath();g.moveTo(q[0],q[1]);for(let k=1;k<4;k++)g.lineTo(q[k*2],q[k*2+1]);g.closePath();
+    g.fillStyle=`hsl(${(i*47)%360},70%,35%)`;g.fill();g.strokeStyle='#fff';g.lineWidth=2;g.stroke();const c=ctr(i);g.fillStyle='#fff';g.fillText(s.name,c.x,c.y)});
+  const a=document.createElement('a');a.href=cv.toDataURL('image/png');a.download=(P.name||'chaser')+'_InputMap.png';a.click();closeFly()};
+$('#ePlugin').onclick=()=>{save();closeFly()};
 document.addEventListener('dragover',e=>{e.preventDefault();$('#drop').style.display='flex'});
 document.addEventListener('dragleave',e=>{if(e.target===$('#drop'))$('#drop').style.display='none'});
-document.addEventListener('drop',e=>{e.preventDefault();$('#drop').style.display='none';const f=e.dataTransfer.files[0];if(!f)return;
-  f.text().then(t=>{if(f.name.toLowerCase().endsWith('.xml'))parseXml(t,f.name);else{try{P=JSON.parse(t);cur=0;stepI=0;draw();save()}catch(x){alert('File samajh nahi aayi')}}})});
+document.addEventListener('drop',e=>{e.preventDefault();$('#drop').style.display='none';const f=e.dataTransfer.files[0];if(!f)return;f.text().then(t=>f.name.toLowerCase().endsWith('.xml')?parseXml(t,f.name):loadProj(t))});
 
 /* ---------------- keys ---------------- */
-document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;
-  if(e.key==='ArrowRight'&&seq()){stepI=Math.min(S().length-1,stepI+1);paint();renderSteps()}
-  if(e.key==='ArrowLeft'&&seq()){stepI=Math.max(0,stepI-1);paint();renderSteps()}
-  if(e.key===' '){e.preventDefault();setPlay(!playing)}
-  if((e.ctrlKey||e.metaKey)&&e.key==='c')$('#tCopy').click();
-  if((e.ctrlKey||e.metaKey)&&e.key==='v')$('#tPaste').click();});
+document.addEventListener('keydown',e=>{if(e.target.isContentEditable||e.target.tagName==='INPUT'||e.target.tagName==='SELECT')return;
+  if(e.code==='Space'){spaceDown=true;$('#view').classList.add('pan');e.preventDefault()}
+  if(e.key==='ArrowRight')$('#bNext').click();if(e.key==='ArrowLeft')$('#bPrev').click();
+  if(e.key==='Enter')setPlay(!playing);if(e.key==='f'||e.key==='F')fit();
+  if(e.key==='Delete'){steps()[stepI]=[];paint();renderStepCell(stepI);save()}
+  if((e.ctrlKey||e.metaKey)&&e.key==='c')clip=[...step()];
+  if((e.ctrlKey||e.metaKey)&&e.key==='v'&&clip){steps()[stepI]=[...clip];paint();renderStepCell(stepI);save()}
+  if(e.key==='Escape')closeFly()});
+document.addEventListener('keyup',e=>{if(e.code==='Space'){spaceDown=false;if(!panMode)$('#view').classList.remove('pan')}});
+window.addEventListener('resize',()=>P&&fit());
 
 /* ---------------- start ---------------- */
-function demo(){const sl=[];const C=8,R=4,w=1920/C,h=1080/R;for(let r=0;r<R;r++)for(let c=0;c<C;c++){const x=c*w,y=r*h;sl.push({name:`Demo ${r*C+c+1}`,quad:[x+4,y+4,x+w-4,y+4,x+w-4,y+h-4,x+4,y+h-4]})}
-  return{comp:[1920,1080],slices:sl,seqs:[],src:'demo'}}
+function demo(){const b=blank();const C=8,R=4,w=1920/C,h=1080/R;for(let r=0;r<R;r++)for(let c=0;c<C;c++){const x=c*w,y=r*h;b.slices.push({name:`Demo ${r*C+c+1}`,screen:'Demo Screen',quad:[x+6,y+6,x+w-6,y+6,x+w-6,y+h-6,x+6,y+h-6]})}return b}
 (async()=>{
   let pj=null;try{pj=await fetch('/api/project').then(r=>r.json())}catch(e){}
-  if(pj&&pj.slices){P=pj;status(`${P.slices.length} slices · project khula`,true);draw();return}
-  P=demo();P.seqs=[{name:'Left → Right',steps:gen('lr',1)},{name:'Random ek panel',steps:gen('rand1',1)},{name:'Sab ON / Sab OFF',steps:gen('flash',1)}];
-  draw();status('Demo layout – apna Resolume layout load karo');
+  if(pj&&pj.slices&&pj.slices.length){P=Object.assign(blank(),pj);P.slices.forEach(s=>{if(!s.screen)s.screen='Screen'});build();fit();status(`${P.slices.length} slices · project khula`,true);return}
   const list=await fetch('/api/xmllist').then(r=>r.json()).catch(()=>[]);
-  if(list.length){const t=await fetch('/api/xml?path='+encodeURIComponent(list[0])).then(r=>r.text());const keep=P.seqs;P.seqs=[];parseXml(t,list[0]);
-    if(P.slices.length)P.seqs=[{name:'Left → Right',steps:gen('lr',1)},{name:'Random ek panel',steps:gen('rand1',1)},{name:'Sab ON / Sab OFF',steps:gen('flash',1)}];draw();save()}
-  else save();
+  P=blank();
+  if(list.length){const t=await fetch('/api/xml?path='+encodeURIComponent(list[0])).then(r=>r.text());if(parseXml(t,list[0])){runFactory();return}}
+  P=demo();build();fit();runFactory();status('Demo – File → Relink se apna Resolume layout load karo');
 })();
 </script>
 </body></html>
