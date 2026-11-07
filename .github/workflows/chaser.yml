@@ -1,0 +1,41 @@
+name: Build VJ Chaser
+on:
+  push:
+    paths: [ 'chaser/**', '.github/workflows/chaser.yml' ]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get FFGL SDK
+        run: git clone --depth 1 https://github.com/resolume/ffgl chaser/plugin/ffgl
+      - name: Build plugin
+        run: |
+          cmake -S chaser/plugin -B chaser/plugin/build -A x64
+          cmake --build chaser/plugin/build --config Release
+          mkdir dist
+          copy chaser\plugin\build\Release\VJChaser.dll dist\VJChaser.dll
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Build editor
+        run: |
+          pip install pyinstaller
+          pyinstaller --onefile --noconsole --name VJChaserEditor --icon chaser/editor/icon.ico --add-data "chaser/editor/editor.html;." --distpath dist chaser/editor/vjchaser_editor.py
+      - name: Installer
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" chaser\installer.iss
+      - run: dir dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: chaser
+          name: VJ Chaser (Resolume plugin + editor)
+          files: |
+            dist/VJChaser_Setup.exe
+            dist/VJChaser.dll
+            dist/VJChaserEditor.exe
+          make_latest: false

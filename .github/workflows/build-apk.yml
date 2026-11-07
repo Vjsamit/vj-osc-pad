@@ -1,6 +1,7 @@
 name: Build APK + PC Bridge
 on:
   push:
+    paths-ignore: [ 'chaser/**', '.github/workflows/chaser.yml' ]
   workflow_dispatch:
 permissions:
   contents: write

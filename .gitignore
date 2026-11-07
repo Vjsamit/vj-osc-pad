@@ -2,3 +2,5 @@ build/
 .gradle/
 app/build/
 local.properties
+chaser/plugin/ffgl/
+chaser/plugin/build/
