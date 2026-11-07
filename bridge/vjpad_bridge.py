@@ -5,7 +5,7 @@ Phone app isse apne aap dhoondh leta hai (Wi-Fi broadcast), IP type nahi karna.
   phone  --OSC-->  bridge :7010  --> Resolume 127.0.0.1:7000   (Resolume OSC Input)
   Resolume OSC Output 127.0.0.1:7001  --> bridge --> sabhi jude phones
 """
-import json, os, socket, struct, sys, threading, time, queue
+import json, os, socket, struct, sys, threading, time, queue, ctypes
 
 APP = "VJ Pad Bridge"
 DISC_PORT = 7099
@@ -54,6 +54,127 @@ def osc_first_int(b):
     return None
 
 
+def osc_first_num(b):
+    try:
+        i = (b.index(b"\0") + 4) & ~3
+        j = b.index(b"\0", i); tags = b[i + 1:j].decode()
+        k = (j + 4) & ~3
+        if tags[:1] == "i": return struct.unpack(">i", b[k:k + 4])[0], True
+        if tags[:1] == "f": return struct.unpack(">f", b[k:k + 4])[0], False
+        if tags[:1] == "T": return 1, True
+        if tags[:1] == "F": return 0, True
+    except Exception: pass
+    return None, False
+
+
+# ------------------------------------------------------------------ virtual MIDI
+class Midi:
+    """Creates a virtual MIDI port 'VJ Pad Bridge' (needs loopMIDI's free driver installed),
+    or falls back to an existing loopMIDI port whose name contains 'VJ Pad'."""
+    NAME = "VJ Pad Bridge"
+
+    def __init__(self, log, on_in):
+        self.log, self.on_in = log, on_in
+        self.mode, self.port_name = None, ""
+        self._port = None; self._dll = None; self._out = None; self._cb = None
+
+    def open(self):
+        if os.name == "nt" and self._open_te(): return True
+        if self._open_rtmidi(): return True
+        self.log("MIDI: virtual port nahi bana. loopMIDI install karo (free): tobias-erichsen.de/software/loopmidi.html")
+        return False
+
+    def _open_te(self):
+        for n in ("teVirtualMIDI64.dll", "teVirtualMIDI.dll", "teVirtualMIDI32.dll"):
+            try:
+                dll = ctypes.WinDLL(n); break
+            except OSError:
+                dll = None
+        if dll is None: return False
+        try:
+            CB = ctypes.WINFUNCTYPE(None, ctypes.c_void_p, ctypes.POINTER(ctypes.c_ubyte), ctypes.c_uint32, ctypes.c_void_p)
+            def cb(port, data, length, inst):
+                try:
+                    if data and length: self.on_in(bytes(data[:length]))
+                except Exception: pass
+            self._cb = CB(cb)
+            create = dll.virtualMIDICreatePortEx2
+            create.restype = ctypes.c_void_p
+            create.argtypes = [ctypes.c_wchar_p, CB, ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32]
+            port = create(self.NAME, self._cb, None, 65535, 1)   # TE_VM_FLAGS_PARSE_RX
+            if not port:
+                self.log(f"MIDI: driver mila par port nahi bana (error {ctypes.get_last_error() or ctypes.GetLastError()}). Kya '{self.NAME}' naam ka port pehle se khula hai?")
+                return False
+            dll.virtualMIDISendData.argtypes = [ctypes.c_void_p, ctypes.POINTER(ctypes.c_ubyte), ctypes.c_uint32]
+            dll.virtualMIDISendData.restype = ctypes.c_bool
+            self._dll, self._port = dll, port
+            self.mode, self.port_name = "virtual", self.NAME
+            self.log(f"MIDI: virtual port '{self.NAME}' ban gaya ✔  (Resolume → Preferences → MIDI me ON karo)")
+            return True
+        except Exception as e:
+            self.log(f"MIDI: virtual port error: {e}")
+            return False
+
+    def _open_rtmidi(self):
+        try:
+            import rtmidi
+        except Exception:
+            return False
+        try:
+            out = rtmidi.MidiOut()
+            ports = out.get_ports()
+            idx = next((i for i, n in enumerate(ports) if "vj pad" in n.lower()), None)
+            if idx is None:
+                idx = next((i for i, n in enumerate(ports) if "loopmidi" in n.lower()), None)
+            if idx is None: return False
+            out.open_port(idx)
+            self._out = out; self.mode, self.port_name = "loopmidi", ports[idx]
+            self.log(f"MIDI: loopMIDI port '{ports[idx]}' use ho raha hai ✔ (Resolume me iska MIDI Output OFF rakho)")
+            return True
+        except Exception as e:
+            self.log(f"MIDI: loopMIDI error: {e}")
+            return False
+
+    def send(self, msg):
+        try:
+            if self._port:
+                arr = (ctypes.c_ubyte * len(msg))(*msg)
+                return self._dll.virtualMIDISendData(self._port, arr, len(msg))
+            if self._out:
+                self._out.send_message(list(msg)); return True
+        except Exception as e:
+            self.log(f"MIDI send error: {e}")
+        return False
+
+    @staticmethod
+    def from_osc(addr, val, is_int):
+        # /midi/note/<ch>/<num>   /midi/cc/<ch>/<num>
+        parts = addr.split("/")
+        if len(parts) != 5: return None
+        _, _, kind, ch, num = parts
+        try: ch = max(1, min(16, int(ch))) - 1; num = max(0, min(127, int(num)))
+        except ValueError: return None
+        v = 0 if val is None else val
+        if kind == "note":
+            if v > 0:
+                vel = 127 if (is_int or v >= 1) else max(1, min(127, round(v * 127)))
+                return bytes([0x90 | ch, num, vel])
+            return bytes([0x80 | ch, num, 0])
+        if kind == "cc":
+            cv = int(v) if (is_int and v > 1) else round(v * 127)
+            return bytes([0xB0 | ch, num, max(0, min(127, cv))])
+        return None
+
+    @staticmethod
+    def to_osc(msg):
+        if len(msg) < 3: return None
+        st, ch = msg[0] & 0xF0, (msg[0] & 0x0F) + 1
+        if st == 0x90: return osc(f"/midi/note/{ch}/{msg[1]}", int(msg[2]))
+        if st == 0x80: return osc(f"/midi/note/{ch}/{msg[1]}", 0)
+        if st == 0xB0: return osc(f"/midi/cc/{ch}/{msg[1]}", float(msg[2] / 127.0))
+        return None
+
+
 def lan_ips():
     ips = set()
     try:
@@ -74,6 +195,8 @@ class Bridge:
         self.lock = threading.Lock()
         self.tx = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.ok = True
+        self.to_midi = 0
+        self.midi = Midi(log, self.midi_in)
 
     def _bind(self, port, bcast=False):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -94,6 +217,7 @@ class Bridge:
                 continue
             threading.Thread(target=fn, args=(s,), daemon=True).start()
         threading.Thread(target=self.probe_loop, daemon=True).start()
+        self.midi.open()
         self.log(f"Bridge chalu. PC: {self.cfg['name']}  IP: {', '.join(lan_ips()) or '?'}")
 
     def disc_loop(self, s):
@@ -125,6 +249,11 @@ class Bridge:
                 except OSError: pass
                 continue
             p["n"] += 1
+            if a.startswith("/midi/"):
+                v, is_int = osc_first_num(b)
+                m = Midi.from_osc(a, v, is_int)
+                if m and self.midi.send(m): self.to_midi += 1
+                continue
             try:
                 self.tx.sendto(b, res); self.to_res += 1
             except OSError as e:
@@ -142,6 +271,25 @@ class Bridge:
             for t in targets:
                 try: self.tx.sendto(b, t); self.to_phone += 1
                 except OSError: pass
+
+    def midi_in(self, data):
+        # Resolume MIDI feedback -> phones
+        i, n = 0, len(data)
+        while i < n:
+            st = data[i]
+            if st & 0x80 and (st & 0xF0) in (0x80, 0x90, 0xB0) and i + 2 < n:
+                pkt = Midi.to_osc(data[i:i + 3])
+                if pkt: self._to_phones(pkt)
+                i += 3
+            else:
+                i += 1
+
+    def _to_phones(self, pkt):
+        with self.lock:
+            targets = [(ip, p["port"]) for ip, p in self.phones.items() if time.time() - p["last"] < 15]
+        for t in targets:
+            try: self.tx.sendto(pkt, t)
+            except OSError: pass
 
     def probe_loop(self):
         while True:
@@ -188,7 +336,7 @@ def run_gui():
     br = Bridge(cfg, log); br.start()
 
     BG, PN, TX, DIM, ACC, OK, BAD = "#0b0b12", "#15151f", "#ececf6", "#8a8aa6", "#ff2e88", "#2bff88", "#ff4060"
-    root = tk.Tk(); root.title(APP); root.configure(bg=BG); root.geometry("520x560"); root.minsize(460, 480)
+    root = tk.Tk(); root.title(APP); root.configure(bg=BG); root.geometry("540x680"); root.minsize(460, 480)
     try: root.iconbitmap(default=os.path.join(getattr(sys, "_MEIPASS", os.path.dirname(__file__)), "icon.ico"))
     except Exception: pass
     F = ("Segoe UI", 10); FB = ("Segoe UI Semibold", 11); FH = ("Segoe UI Semibold", 16)
@@ -204,6 +352,15 @@ def run_gui():
     res_l = tk.Label(c1, font=FB, bg=PN, fg=TX, anchor="w", justify="left"); res_l.pack(fill="x", padx=10, pady=(2, 8))
     c2 = card("PHONE")
     ph_l = tk.Label(c2, font=FB, bg=PN, fg=TX, anchor="w", justify="left"); ph_l.pack(fill="x", padx=10, pady=(2, 8))
+    cm = card("MIDI  (Resolume → Shortcuts → Edit MIDI se map karo)")
+    midi_l = tk.Label(cm, font=FB, bg=PN, fg=TX, anchor="w", justify="left"); midi_l.pack(fill="x", padx=10, pady=(2, 4))
+    def get_loop():
+        import webbrowser; webbrowser.open("https://www.tobias-erichsen.de/software/loopmidi.html")
+    def retry():
+        if not br.midi.mode: br.midi.open()
+    mb = tk.Frame(cm, bg=PN); mb.pack(fill="x", padx=10, pady=(0, 8))
+    lbtn = tk.Button(mb, text="loopMIDI download (ek baar install)", command=get_loop, bg="#2a1a00", fg=TX, relief="flat", font=F, activebackground="#3a2a10")
+    rbtn = tk.Button(mb, text="Dobara try", command=retry, bg="#1b1b2a", fg=TX, relief="flat", font=F)
     c3 = card("IS PC KI JAANKARI")
     tk.Label(c3, text=f"Naam: {cfg['name']}     IP: {', '.join(lan_ips()) or '?'}", font=F, bg=PN, fg=TX).pack(anchor="w", padx=10)
     tk.Label(c3, text=f"Resolume → Preferences → OSC:\n   OSC Input  ON  port {cfg['res_port']}\n   OSC Output ON  IP 127.0.0.1  port {cfg['fb_port']}",
@@ -224,6 +381,11 @@ def run_gui():
                      fg=OK if alive else BAD)
         ph_l.config(text=("●  " + "\n●  ".join(f"{ip}" for ip, _ in ph)) if ph else "●  Koi phone nahi – app kholo (same Wi-Fi), Auto mode",
                     fg=OK if ph else BAD)
+        if br.midi.mode:
+            midi_l.config(text=f"●  MIDI port: {br.midi.port_name}   ({br.to_midi} msgs)", fg=OK); lbtn.pack_forget(); rbtn.pack_forget()
+        else:
+            midi_l.config(text="●  MIDI port nahi – loopMIDI install karo, phir 'Dobara try'", fg=BAD)
+            if not lbtn.winfo_ismapped(): lbtn.pack(side="left"); rbtn.pack(side="left", padx=6)
         while not logq.empty():
             lg.insert("end", logq.get() + "\n"); lg.see("end")
         root.after(700, tick)

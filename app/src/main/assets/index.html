@@ -140,6 +140,10 @@ p.n{color:var(--dim);font-weight:400;line-height:1.45;margin:6px 0}
   <p class="n" id="myip"></p>
   <div class="grid2"><div class="b" id="qNames">↻ Naam + thumbnail refresh</div></div>
   <p class="n"><b>Auto mode:</b> PC par VJ Pad Bridge chalao, bas. Resolume → Preferences → OSC → <b>OSC Input</b> ON port 7000, <b>OSC Output</b> ON IP <b>127.0.0.1</b> port 7001, <b>Webserver</b> ON port 8080 (thumbnail).<br><b>Manual mode:</b> Resolume → Preferences → OSC → <b>OSC Input</b> ON, port 7000. PC ka IP: cmd me <b>ipconfig</b> → IPv4 Address. Light/naam ke liye <b>OSC Output</b> ON, IP = upar likha phone ka IP, port 7001. Thumbnail ke liye Preferences → <b>Webserver</b> ON, port 8080.</p>
+  <h4>MIDI</h4>
+  <div class="row"><span>Naye controls</span><select id="sMidi"><option value="1">MIDI (Edit MIDI se map – aasaan)</option><option value="0">OSC</option></select></div>
+  <div class="grid2"><div class="b" id="pgMidi">🎹 Is page ke controls MIDI banao</div></div>
+  <p class="n">MIDI ke liye PC par VJ Pad Bridge + loopMIDI chahiye. Resolume → Preferences → MIDI me <b>VJ Pad Bridge</b> ON karo. Clip pads (naam/thumbnail wale) OSC par hi rehte hain.</p>
   <h4>PAGES</h4>
   <div class="row"><span>Is page ka naam</span><input id="sPgName"></div>
   <div class="grid2"><div class="b" id="pgAdd">＋ Naya page</div><div class="b" id="pgDup">⧉ Page copy</div><div class="b" id="pgLeft">◀ Page left</div><div class="b" id="pgRight">Page right ▶</div><div class="b danger" id="pgDel">🗑 Page delete</div></div>
@@ -157,7 +161,7 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const BR=window.Android||null;
 const COLS=['#ff2e88','#18e0ff','#ffb020','#2bff88','#a96bff','#ff5a3c','#3c8cff','#f4ff3c','#ffffff','#ff8ad8'];
 const GW=24,GH=12;
-let S={mode:'auto',ip:'',port:7000,fbport:7001,web:8080,thumbs:true};let HOST='',CONN=false;let TS=Date.now();
+let S={midi:true,mode:'auto',ip:'',port:7000,fbport:7001,web:8080,thumbs:true};let HOST='',CONN=false;let TS=Date.now();
 let L=null;           // layout {pages:[{name,ctls:[]}], cur:0}
 let editing=false, sel=null;
 const VAL={};         // runtime values  id -> value
@@ -201,6 +205,13 @@ function watchList(){const s=new Set();L.pages.forEach(p=>p.ctls.forEach(c=>{[c.
 /* ---------------- defaults ---------------- */
 let NUM={pad:0,toggle:0,fader:0,knob:0,xy:0};
 function nextNum(t){let m=0;const re=new RegExp('^/'+t+'/(\\d+)');L&&L.pages.forEach(p=>p.ctls.forEach(c=>{const a=(c.addr||c.addrX||'').match(re);if(a)m=Math.max(m,+a[1])}));return m+1}
+function allAddrs(){const a=[];L&&L.pages.forEach(p=>p.ctls.forEach(c=>[c.addr,c.addrX,c.addrY].forEach(x=>x&&a.push(x))));return a}
+function nextMidi(kind){const used=new Set(allAddrs());let n=kind==='note'?36:1;while(used.has(`/midi/${kind}/1/${n}`)&&n<127)n++;return n}
+function toMidi(c){ // give control a fresh MIDI address
+  if(c.type==='pad'||c.type==='toggle'){const n=nextMidi('note');c.addr=`/midi/note/1/${n}`;c.fb=c.addr;c.fbMin=1;c.nameAddr='';c.on=1;c.off=0;c.int=true}
+  else if(c.type==='fader'||c.type==='knob'){const n=nextMidi('cc');c.addr=`/midi/cc/1/${n}`;c.min=0;c.max=1;c.int=false}
+  else if(c.type==='xy'){c.addrX=`/midi/cc/1/${nextMidi('cc')}`;const t=c.addrX;c.addrX='';const u=allAddrs();c.addrX=t;let n=+t.split('/').pop()+1;while(u.includes(`/midi/cc/1/${n}`))n++;c.addrY=`/midi/cc/1/${n}`}
+}
 function mk(type,o={}){
   const base={id:uid(),type,x:0,y:0,w:3,h:3,name:'',color:COLS[1]};
   if(type==='pad'||type==='toggle'){const n=nextNum(type);Object.assign(base,{name:(type==='pad'?'PAD ':'TOG ')+n,addr:`/${type}/${n}`,on:1,off:0,int:true})}
@@ -208,7 +219,9 @@ function mk(type,o={}){
   if(type==='knob'){const n=nextNum('knob');Object.assign(base,{name:'KNOB '+n,addr:`/knob/${n}`,min:0,max:1,def:0,int:false,w:3,h:3})}
   if(type==='xy'){const n=nextNum('xy');Object.assign(base,{name:'XY '+n,addrX:`/xy/${n}/x`,addrY:`/xy/${n}/y`,spring:false,w:6,h:6})}
   if(type==='label'){Object.assign(base,{name:'LABEL',w:4,h:1,color:'#ffffff'})}
-  return Object.assign(base,o);
+  const r=Object.assign(base,o);
+  if(S.midi&&type!=='label'&&!o.addr&&!o.addrX){const keep=r.addr;toMidi(r);if(L){} }
+  return r;
 }
 function tClips(Ln,Cn,x0,y0,w,h){const out=[];const cw=Math.max(1,Math.floor(w/Cn)),ch=Math.max(1,Math.floor(h/Ln));
   for(let l=Ln;l>=1;l--)for(let c=1;c<=Cn;c++)out.push(mk('pad',{name:''+c,addr:`/composition/layers/${l}/clips/${c}/connect`,fb:`/composition/layers/${l}/clips/${c}/connected`,fbMin:3,nameAddr:`/composition/layers/${l}/clips/${c}/name`,color:COLS[(l-1)%8],x:x0+(c-1)*cw,y:y0+(Ln-l)*ch,w:cw,h:ch}));
@@ -384,7 +397,7 @@ function openSheet(id){closeAll();$(id).classList.add('open')}
 $('#pClose').addEventListener('click',()=>{closeAll();watchList()});$('#aClose').addEventListener('click',closeAll);
 $('#sClose').addEventListener('click',closeAll);
 $('#addCtl').addEventListener('click',()=>openSheet('#adds'));
-$('#gear').addEventListener('click',()=>{$('#sMode').value=S.mode;$('#sWeb').value=S.web||8080;$('#sTh').value=S.thumbs?'1':'0';$('#sIp').value=S.ip;$('#sPort').value=S.port;$('#sFbp').value=S.fbport;$('#sPgName').value=page().name;applyNet();openSheet('#sets')});
+$('#gear').addEventListener('click',()=>{$('#sMode').value=S.mode;$('#sMidi').value=S.midi?'1':'0';$('#sWeb').value=S.web||8080;$('#sTh').value=S.thumbs?'1':'0';$('#sIp').value=S.ip;$('#sPort').value=S.port;$('#sFbp').value=S.fbport;$('#sPgName').value=page().name;applyNet();openSheet('#sets')});
 
 function freeSpot(w,h){const occ=(x,y)=>page().ctls.some(c=>x<c.x+c.w&&x+w>c.x&&y<c.y+c.h&&y+h>c.y);
   for(let y=0;y+h<=GH;y++)for(let x=0;x+w<=GW;x++)if(!occ(x,y))return[x,y];return[0,0]}
@@ -439,6 +452,22 @@ function openProps(c){
     if(c.type==='fader')chk('Aada (horizontal)','horiz');
   }
   if(c.type==='xy'){txt('X address','addrX');txt('Y address','addrY');chk('Chhodne par beech me','spring')}
+  if(c.type!=='label'){
+    h4('MIDI (Resolume → Shortcuts → Edit MIDI)');
+    const a0=c.type==='xy'?c.addrX:c.addr; const mm=(a0||'').match(/^\/midi\/(note|cc)\/(\d+)\/(\d+)$/);
+    if(mm&&c.type!=='xy'){
+      const kind=document.createElement('select');kind.innerHTML='<option value="note">Note</option><option value="cc">CC</option>';kind.value=mm[1];
+      const ch=document.createElement('input');ch.type='number';ch.min=1;ch.max=16;ch.value=mm[2];ch.style.maxWidth='70px';
+      const nu=document.createElement('input');nu.type='number';nu.min=0;nu.max=127;nu.value=mm[3];nu.style.maxWidth='80px';
+      const upd=()=>{c.addr=`/midi/${kind.value}/${Math.min(16,Math.max(1,+ch.value||1))}/${Math.min(127,Math.max(0,+nu.value||0))}`;if(c.type==='pad'||c.type==='toggle'){c.fb=c.addr;c.fbMin=1}saveL();refresh(c);watchList()};
+      [kind,ch,nu].forEach(e=>e.addEventListener('change',upd));
+      const w=document.createElement('div');w.style.cssText='display:flex;gap:6px;flex:1';w.append(kind,ch,nu);row('Type · Ch · No.',w);
+      const pn=document.createElement('p');pn.className='n';pn.textContent='Resolume me Shortcuts → Edit MIDI → Resolume ka control click karo → ye pad/fader chalao. Bas! (PC Bridge zaroori)';B.appendChild(pn);
+    }else if(!mm){
+      const mb=document.createElement('div');mb.className='b';mb.style.height='40px';mb.textContent='🎹 Ise MIDI bana do (Edit MIDI se map karne ke liye)';
+      mb.addEventListener('click',()=>{toMidi(c);saveL();refresh(c);watchList();openProps(c)});B.appendChild(mb);
+    }else{const pn=document.createElement('p');pn.className='n';pn.textContent='X = '+c.addrX+'   Y = '+c.addrY;B.appendChild(pn)}
+  }
   h4('SIZE / POSITION');
   const pos=document.createElement('p');pos.className='n';pos.textContent='Control ko kheench ke jagah badlo, peeli kone wali dabbi se size. Grid: 24 × 12.';B.appendChild(pos);
   const g=document.createElement('div');g.className='grid2';
@@ -458,6 +487,8 @@ function bump(d){const inc=s=>s&&s.replace(/(\d+)(?!.*\d)/,m=>+m+1);
 function refresh(c){const old=ELS[c.id];if(!old)return;const n=build(c);n.classList.toggle('selc',sel===c.id);old.replaceWith(n)}
 
 /* ---------------- settings actions ---------------- */
+$('#sMidi').addEventListener('change',e=>{S.midi=e.target.value==='1';saveS()});
+$('#pgMidi').addEventListener('click',()=>{let n=0;page().ctls.forEach(c=>{if(c.type==='label')return;const a=c.addr||c.addrX||'';if(a.startsWith('/composition')||a.startsWith('/midi/'))return;toMidi(c);n++});saveL();render();watchList();toast(n+' controls MIDI ban gaye')});
 $('#sMode').addEventListener('change',e=>{S.mode=e.target.value;saveS();applyNet();render()});
 $('#sIp').addEventListener('change',e=>{S.ip=e.target.value.trim();saveS();applyNet();toast('IP save hua');setTimeout(queryAll,300)});
 $('#qNames').addEventListener('click',()=>{TS=Date.now();for(const k in VAL)if(k.endsWith('nt'))delete VAL[k];render();queryAll();toast('Naam + thumbnail refresh')});

@@ -23,8 +23,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - run: pip install pyinstaller
-      - run: pyinstaller --onefile --noconsole --name VJPadBridge --icon bridge/icon.ico --add-data "bridge/icon.ico;." bridge/vjpad_bridge.py
+      - run: pip install pyinstaller python-rtmidi
+      - run: pyinstaller --onefile --noconsole --name VJPadBridge --icon bridge/icon.ico --hidden-import rtmidi --add-data "bridge/icon.ico;." bridge/vjpad_bridge.py
       - name: Installer (Inno Setup)
         shell: pwsh
         run: |

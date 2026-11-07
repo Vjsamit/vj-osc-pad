@@ -1,6 +1,6 @@
 [Setup]
 AppName=VJ Pad Bridge
-AppVersion=1.0
+AppVersion=2.0
 AppPublisher=VJ Samir
 DefaultDirName={autopf}\VJ Pad Bridge
 DefaultGroupName=VJ Pad Bridge
