@@ -146,7 +146,7 @@ p.n{color:var(--dim);font-weight:400;line-height:1.45;margin:6px 0}
   <textarea id="impTxt" placeholder="Layout ka text yahan paste karo, phir Import dabao"></textarea>
   <div class="grid2"><div class="b danger" id="reset">↺ Default layout</div></div>
   <h4>RESOLUME ME MAP KAISE KAREIN</h4>
-  <p class="n">Resolume me <b>Shortcuts → Edit OSC</b> (Ctrl+Shift+O) → Resolume ka koi control click karo → phone par apna pad/fader/knob chalao → map ho gaya. Har naye control ko apne aap alag address milta hai (/pad/1, /fader/2 ...), isliye kuch type nahi karna padta.</p>
+  <p class="n">Resolume me MIDI jaisa learn nahi hota, wo apne fixed address sunta hai. Isliye: ✎ EDIT → control par tap → <b>🎯 LEARN</b> → Resolume me wo slider/button/effect <b>mouse se hilao</b> → app address khud seekh lega. (Resolume OSC Output ON hona chahiye, IP = phone ka IP.) Ya Resolume me Shortcuts → Edit OSC me control click karke uska address dekho aur app me OSC address me likh do.</p>
 </div></div>
 <div id="toast"></div>
 
@@ -309,15 +309,32 @@ function xyLogic(c,inn){
 
 /* ---------------- feedback from Resolume ---------------- */
 let learnC=null,learnT=0;
-function startLearn(c){learnC=c;closeAll();if(BR&&BR.learn)BR.learn(true);toast('🎯 Ab Resolume me clip chalao…');clearTimeout(learnT);learnT=setTimeout(()=>{if(learnC){learnC=null;if(BR&&BR.learn)BR.learn(false);toast('Learn band (kuch nahi mila). Resolume OSC Output ON hai?')}},20000);
+function startLearn(c){learnC=c;closeAll();if(BR&&BR.learn)BR.learn(true);toast(c.type==='pad'||c.type==='toggle'?'🎯 Resolume me wo control mouse se chalao (clip, effect, bypass…)':'🎯 Resolume me wo slider/knob mouse se hilao…');clearTimeout(learnT);learnT=setTimeout(()=>{if(learnC){learnC=null;if(BR&&BR.learn)BR.learn(false);toast('Learn band (kuch nahi mila). Resolume OSC Output ON hai?')}},20000);
   const e=ELS[c.id];if(e)e.querySelector('.in').style.outline='3px dashed #ffb020'}
 function linkClip(c,l,k){c.addr=`/composition/layers/${l}/clips/${k}/connect`;c.fb=`/composition/layers/${l}/clips/${k}/connected`;c.fbMin=3;c.nameAddr=`/composition/layers/${l}/clips/${k}/name`;c.int=true;c.on=1;c.off=0;
   if(c.type!=='pad')c.type='pad';delete VAL[c.id+'nt'];saveL();refresh(c);watchList();query([c.nameAddr,c.fb]);toast('Juda: Layer '+l+' · Clip '+k)}
+const NOISE=/\/transport\/position|\/tempocontroller\/|\/beat|\/time$|\/vu|\/audio\/level|\/thumbnail|\/name$|\/connected$|\/select(ed)?$|\/selectedclip\/|\/selectedlayer\//;
+function niceName(a){const seg=a.split('/').filter(x=>x&&!/^(composition|video|effects|params|layers|clips|columns|groups|audio|transform|behaviour)$/.test(x));
+  const lm=a.match(/layers\/(\d+)/),cm=a.match(/clips\/(\d+)/);let pre=(lm?'L'+lm[1]+' ':'')+(cm?'C'+cm[1]+' ':'');
+  return (pre+seg.filter(x=>!/^\d+$/.test(x)).slice(-2).join(' ')).toUpperCase().slice(0,22)}
+const DEFNAME=/^(PAD|TOG|FADER|KNOB) \d+$/;
+function learnAddr(c,a,v,tags){
+  const isInt=(tags||'')[0]==='i';
+  c.addr=a;c.nameAddr='';delete VAL[c.id+'n'];delete VAL[c.id+'nt'];
+  if(c.type==='pad'||c.type==='toggle'){
+    if(/\/(bypassed|solo|mute)$/.test(a)){c.type='toggle';c.on=1;c.off=0;c.int=true;c.fb=a;c.fbMin=1}
+    else if(isInt){c.on=1;c.off=0;c.int=true;c.fb=''}
+    else{c.on=1;c.off=0;c.int=false;c.fb=''}
+  }else{c.int=isInt;c.min=0;c.max=isInt?Math.max(1,Math.round(+v[0]||1)):1;c.def=0}
+  if(!c.name||DEFNAME.test(c.name))c.name=niceName(a);
+  saveL();refresh(c);watchList();toast('Seekh liya: '+a)}
 function query(list){list.forEach(a=>{if(a)q.push([a,['?']])});flush()}
 function queryAll(){const s=new Set();L.pages.forEach(p=>p.ctls.forEach(c=>{if(c.nameAddr)s.add(c.nameAddr);if(c.fb)s.add(c.fb)}));query([...s])}
-window.__fb=(a,v)=>{
-  if(learnC){const m=a.match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/(connected|select|selected)$/);
-    if(m&&(m[3]!=='connected'||(+v[0])>=3)){const c=learnC;learnC=null;clearTimeout(learnT);if(BR&&BR.learn)BR.learn(false);haptic();linkClip(c,+m[1],+m[2]);return}}
+window.__fb=(a,v,tags)=>{
+  if(learnC){const c=learnC;const m=a.match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/(connected|select|selected)$/);
+    const done=()=>{learnC=null;clearTimeout(learnT);if(BR&&BR.learn)BR.learn(false);haptic()};
+    if(m&&(c.type==='pad'||c.type==='toggle')&&(m[3]!=='connected'||(+v[0])>=3)){done();linkClip(c,+m[1],+m[2]);return}
+    if(!NOISE.test(a)&&v.length&&typeof v[0]==='number'){done();learnAddr(c,a,v,tags);if($('#props').classList.contains('open'))openProps(c);return}}
   for(const p of L.pages)for(const c of p.ctls){
     if(c.fb===a){VAL[c.id+'lit']=(+v[0])>=(c.fbMin??1);const e=ELS[c.id];if(e)e.querySelector('.in').classList.toggle('lit',VAL[c.id+'lit'])}
     if(c.nameAddr===a){VAL[c.id+'n']=String(v[0]||'')||c.name;const e=ELS[c.id];if(e)e.querySelector('.lab').textContent=VAL[c.id+'n']}
@@ -381,16 +398,17 @@ function openProps(c){
   COLS.forEach(col=>{const k=document.createElement('i');k.style.background=col;if(col===c.color)k.className='s';
     k.addEventListener('click',()=>{c.color=col;sw.querySelectorAll('i').forEach(z=>z.classList.toggle('s',z===k));saveL();refresh(c)});sw.appendChild(k)});
   row('Rang',sw);
+  if(c.type!=='label'&&c.type!=='xy'){
+    const lb=document.createElement('div');lb.className='b';lb.style.cssText='background:#2a1a00;border-color:#ffb020;height:44px;margin:8px 0;font-size:13px';
+    lb.textContent='🎯 LEARN – Resolume me control hilao, address apne aap aayega';lb.addEventListener('click',()=>startLearn(c));B.appendChild(lb)}
   if(c.type==='pad'||c.type==='toggle'){
     const t=document.createElement('select');t.innerHTML='<option value="pad">Momentary (dabao-chhodo)</option><option value="toggle">Toggle (on/off)</option>';t.value=c.type;
     t.addEventListener('change',()=>{c.type=t.value;saveL();refresh(c);openProps(c)});row('Type',t);
     txt('OSC address','addr','/pad/1');num('On value','on');num('Off value','off');chk('Integer bhejo','int');
-    h4('RESOLUME CLIP SE JODO (naam + light)');
+    h4('CLIP SE JODO (naam + thumbnail + light)');
     const cm=(c.addr||'').match(/^\/composition\/layers\/(\d+)\/clips\/(\d+)\/connect$/);
     const st=document.createElement('p');st.className='n';st.textContent=cm?('Juda hai: Layer '+cm[1]+' · Clip '+cm[2]):'Abhi kisi clip se nahi juda.';B.appendChild(st);
     const lr=document.createElement('div');lr.className='grid2';
-    const lb=document.createElement('div');lb.className='b';lb.style.background='#2a1a00';lb.style.borderColor='#ffb020';lb.textContent='🎯 LEARN (Resolume me clip chalao)';
-    lb.addEventListener('click',()=>startLearn(c));lr.appendChild(lb);
     const ub=document.createElement('div');ub.className='b';ub.textContent='✕ Clip se hatao';
     ub.addEventListener('click',()=>{const n=nextNum('pad');c.addr='/pad/'+n;c.fb='';c.nameAddr='';delete VAL[c.id+'n'];delete VAL[c.id+'lit'];saveL();refresh(c);openProps(c)});lr.appendChild(ub);B.appendChild(lr);
     const li=document.createElement('input');li.type='number';li.placeholder='Layer';li.value=cm?cm[1]:'';

@@ -130,7 +130,9 @@ public class MainActivity extends Activity {
             int end = off + n;
             int j = strEnd(b, off, end);
             String addr = new String(b, off, j - off, UTF8);
-            if (!watched.contains(addr) && !(learning && LEARN.matcher(addr).matches())) return;
+            boolean w = watched.contains(addr);
+            if (!w && !learning) return;
+            if (!w && (addr.contains("/transport/position") || addr.contains("/tempocontroller/") || addr.endsWith("/thumbnail"))) return;
             int i = (j + 4 - off) / 4 * 4 + off;
             int k = strEnd(b, i, end);
             String tags = new String(b, i, k - i, UTF8);
@@ -143,7 +145,7 @@ public class MainActivity extends Activity {
                 else if (c == 's') { int e = strEnd(b, i, end); out.put(new String(b, i, e - i, UTF8)); i = (e + 4 - off) / 4 * 4 + off; }
                 else if (c == 'd' || c == 'h') { i += 8; }
             }
-            final String js = "window.__fb(" + JSONObject.quote(addr) + "," + out.toString() + ")";
+            final String js = "window.__fb(" + JSONObject.quote(addr) + "," + out.toString() + "," + JSONObject.quote(tags.length() > 1 ? tags.substring(1) : "") + ")";
             web.post(new Runnable() { public void run() { web.evaluateJavascript(js, null); } });
         } catch (Exception ignored) { }
     }
